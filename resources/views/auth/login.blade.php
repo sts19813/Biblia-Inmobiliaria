@@ -18,6 +18,18 @@
                         </div>
                     </div>
 
+                    <div class="d-grid mb-8">
+                        <a href="{{ route('google.redirect') }}" class="btn btn-flex btn-light btn-lg w-100">
+                            <img alt="Google" src="{{ asset('/metronic/assets/media/svg/brand-logos/google-icon.svg') }}"
+                                class="h-20px me-3" />
+                            Continuar con Google
+                        </a>
+                    </div>
+
+                    <div class="separator separator-content my-10">
+                        <span class="w-125px text-gray-500 fw-semibold fs-7">O con correo</span>
+                    </div>
+
                     @if (session('status'))
                         <div class="alert alert-success d-flex align-items-center mb-5">
                             <i class="ki-outline ki-check-circle fs-2 me-3"></i>
