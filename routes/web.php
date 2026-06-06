@@ -46,6 +46,8 @@ Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
 Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
     Route::get('desarrollos', [DevelopmentController::class, 'index'])->name('developments.index');
+    Route::get('desarrollos/crear', [DevelopmentController::class, 'create'])->name('developments.create');
+    Route::post('desarrollos', [DevelopmentController::class, 'store'])->name('developments.store');
     Route::resource('usuarios', UserController::class)
         ->except(['show'])
         ->names('users')
