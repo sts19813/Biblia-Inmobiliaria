@@ -4,6 +4,8 @@
     $selectedStatus = old('status', $development->status ?: 'preventa');
     $amenitiesText = old('amenities', implode(PHP_EOL, $development->amenities ?? []));
     $detailValue = fn (string $key) => old('property_details.' . $key, $details[$key] ?? '');
+    $logoUrl = $development->exists ? $development->logoUrl() : null;
+    $coverImageUrl = $development->exists ? $development->coverImageUrl() : null;
 
     $typeIcons = [
         'casa' => 'ki-home-2',
@@ -143,6 +145,41 @@
         .development-sticky {
             top: 100px;
         }
+
+        .development-upload-zone {
+            border: 2px dashed var(--bs-gray-300);
+            border-radius: .75rem;
+            min-height: 170px;
+            cursor: pointer;
+            transition: border-color .2s ease, background-color .2s ease, box-shadow .2s ease;
+        }
+
+        .development-upload-zone:hover,
+        .development-upload-zone.is-dragging {
+            background-color: var(--bs-primary-light);
+            border-color: var(--bs-primary);
+            box-shadow: 0 0 0 .25rem rgba(47, 128, 237, .08);
+        }
+
+        .development-upload-zone img {
+            display: none;
+            max-height: 118px;
+            max-width: 100%;
+            object-fit: contain;
+        }
+
+        .development-upload-zone.has-preview img {
+            display: block;
+        }
+
+        .development-upload-zone.has-preview [data-upload-empty] {
+            display: none;
+        }
+
+        .tox-tinymce {
+            border-color: var(--bs-gray-300) !important;
+            border-radius: .75rem !important;
+        }
     </style>
 @endpush
 
@@ -230,6 +267,70 @@
                         @enderror
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <div class="card card-flush mb-8">
+            <div class="card-header">
+                <div class="card-title">
+                    <h3 class="fw-bold mb-0">Imagenes</h3>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row g-6">
+                    <div class="col-md-6">
+                        <label class="form-label">Logo del Desarrollo</label>
+                        <label class="development-upload-zone d-flex align-items-center justify-content-center text-center p-8 @if ($logoUrl) has-preview @endif @error('logo') border-danger @enderror"
+                            data-upload-zone for="development_logo">
+                            <input id="development_logo" type="file" name="logo" class="d-none"
+                                accept="image/*,.svg,image/svg+xml" data-upload-input data-preview-target="development_logo_preview">
+                            <img id="development_logo_preview" src="{{ $logoUrl ?: '' }}" alt="Logo del desarrollo">
+                            <span data-upload-empty>
+                                <i class="ki-outline ki-file-up fs-3x text-gray-500 d-block mb-4"></i>
+                                <span class="fw-semibold fs-5 text-gray-700">Arrastra o haz clic para subir</span>
+                                <span class="text-muted fs-7 d-block mt-2">JPG, PNG, WEBP, GIF o SVG</span>
+                            </span>
+                        </label>
+                        @error('logo')
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Imagen de Portada</label>
+                        <label class="development-upload-zone d-flex align-items-center justify-content-center text-center p-8 @if ($coverImageUrl) has-preview @endif @error('cover_image') border-danger @enderror"
+                            data-upload-zone for="development_cover_image">
+                            <input id="development_cover_image" type="file" name="cover_image" class="d-none"
+                                accept="image/*,.svg,image/svg+xml" data-upload-input data-preview-target="development_cover_image_preview">
+                            <img id="development_cover_image_preview" src="{{ $coverImageUrl ?: '' }}" alt="Imagen de portada">
+                            <span data-upload-empty>
+                                <i class="ki-outline ki-file-up fs-3x text-gray-500 d-block mb-4"></i>
+                                <span class="fw-semibold fs-5 text-gray-700">Arrastra o haz clic para subir</span>
+                                <span class="text-muted fs-7 d-block mt-2">JPG, PNG, WEBP, GIF o SVG</span>
+                            </span>
+                        </label>
+                        @error('cover_image')
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                        @enderror
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card card-flush mb-8">
+            <div class="card-header">
+                <div class="card-title">
+                    <h3 class="fw-bold mb-0">Descripcion</h3>
+                </div>
+            </div>
+            <div class="card-body">
+                <label class="form-label">Descripcion del Proyecto</label>
+                <textarea name="description" id="development_description" rows="10"
+                    class="form-control form-control-solid @error('description') is-invalid @enderror"
+                    placeholder="Describe las caracteristicas principales del desarrollo...">{{ old('description', $development->description) }}</textarea>
+                @error('description')
+                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                @enderror
             </div>
         </div>
 
@@ -510,6 +611,7 @@
 </div>
 
 @push('scripts')
+    <script src="{{ asset('/metronic/assets/plugins/custom/tinymce/tinymce.bundle.js') }}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             var form = document.querySelector('[data-development-form]');
@@ -520,6 +622,7 @@
 
             var sections = form.querySelectorAll('[data-development-section]');
             var typeInputs = form.querySelectorAll('input[name="property_type"]');
+            var uploadZones = form.querySelectorAll('[data-upload-zone]');
 
             function setActiveType(type) {
                 sections.forEach(function (section) {
@@ -543,6 +646,67 @@
                     setActiveType(input.value);
                 }
             });
+
+            uploadZones.forEach(function (zone) {
+                var input = zone.querySelector('[data-upload-input]');
+                var preview = document.getElementById(input.getAttribute('data-preview-target'));
+
+                function renderPreview(file) {
+                    if (!file || !preview) {
+                        return;
+                    }
+
+                    preview.src = URL.createObjectURL(file);
+                    zone.classList.add('has-preview');
+                }
+
+                input.addEventListener('change', function () {
+                    renderPreview(input.files[0]);
+                });
+
+                ['dragenter', 'dragover'].forEach(function (eventName) {
+                    zone.addEventListener(eventName, function (event) {
+                        event.preventDefault();
+                        zone.classList.add('is-dragging');
+                    });
+                });
+
+                ['dragleave', 'drop'].forEach(function (eventName) {
+                    zone.addEventListener(eventName, function (event) {
+                        event.preventDefault();
+                        zone.classList.remove('is-dragging');
+                    });
+                });
+
+                zone.addEventListener('drop', function (event) {
+                    var files = event.dataTransfer.files;
+
+                    if (!files.length) {
+                        return;
+                    }
+
+                    input.files = files;
+                    renderPreview(files[0]);
+                });
+            });
+
+            if (typeof tinymce !== 'undefined') {
+                tinymce.init({
+                    selector: '#development_description',
+                    height: 340,
+                    menubar: false,
+                    branding: false,
+                    plugins: 'lists link table code autoresize',
+                    toolbar: 'undo redo | blocks | bold italic underline | bullist numlist | alignleft aligncenter alignright | link table | removeformat code',
+                    content_style: 'body { font-family: Inter, Arial, sans-serif; font-size: 14px; }',
+                    skin: document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 'oxide-dark' : 'oxide',
+                    content_css: false
+                });
+
+                form.addEventListener('submit', function () {
+                    tinymce.triggerSave();
+                });
+            }
         });
     </script>
 @endpush

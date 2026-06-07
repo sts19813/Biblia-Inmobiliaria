@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 #[Fillable([
     'name',
@@ -13,6 +14,9 @@ use Illuminate\Database\Eloquent\Model;
     'city',
     'zone',
     'map_url',
+    'logo_path',
+    'cover_image_path',
+    'description',
     'price_from',
     'price_per_m2',
     'down_payment',
@@ -33,6 +37,16 @@ use Illuminate\Database\Eloquent\Model;
 class Development extends Model
 {
     use HasFactory;
+
+    public function logoUrl(): ?string
+    {
+        return $this->logo_path ? Storage::disk('public')->url($this->logo_path) : null;
+    }
+
+    public function coverImageUrl(): ?string
+    {
+        return $this->cover_image_path ? Storage::disk('public')->url($this->cover_image_path) : null;
+    }
 
     protected function casts(): array
     {

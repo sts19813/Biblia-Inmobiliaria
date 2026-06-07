@@ -14,7 +14,7 @@
 @endsection
 
 @section('content')
-    <form method="POST" action="{{ route('admin.developments.store') }}" data-development-form>
+    <form method="POST" action="{{ route('admin.developments.store') }}" enctype="multipart/form-data" data-development-form>
         @csrf
         @include('admin.developments._form')
     </form>

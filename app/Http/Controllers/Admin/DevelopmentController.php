@@ -49,12 +49,21 @@ class DevelopmentController extends Controller
     public function store(Request $request)
     {
         $data = $this->validatedData($request);
+        $data['description'] = $data['description'] ?? null;
         $data['amenities'] = $this->linesToArray($data['amenities']);
         $data['property_details'] = $this->normalizeDetails(
             $data['property_type'],
             $data['property_details'] ?? []
         );
         $data['created_by'] = $request->user()->id;
+
+        if ($request->hasFile('logo')) {
+            $data['logo_path'] = $request->file('logo')->store('developments/logos', 'public');
+        }
+
+        if ($request->hasFile('cover_image')) {
+            $data['cover_image_path'] = $request->file('cover_image')->store('developments/covers', 'public');
+        }
 
         Development::create($data);
 
@@ -72,6 +81,9 @@ class DevelopmentController extends Controller
             'city' => ['required', 'string', 'max:255'],
             'zone' => ['required', 'string', 'max:255'],
             'map_url' => ['required', 'url', 'max:700'],
+            'logo' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,gif,svg', 'max:8192'],
+            'cover_image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,gif,svg', 'max:8192'],
+            'description' => ['nullable', 'string'],
             'price_from' => ['required', 'numeric', 'min:0'],
             'price_per_m2' => ['required', 'numeric', 'min:0'],
             'down_payment' => ['required', 'numeric', 'min:0'],
@@ -93,7 +105,11 @@ class DevelopmentController extends Controller
             $rules["property_details.$field"] = $fieldRules;
         }
 
-        return $request->validate($rules);
+        $data = $request->validate($rules);
+
+        unset($data['logo'], $data['cover_image']);
+
+        return $data;
     }
 
     private function detailRules(?string $propertyType): array
