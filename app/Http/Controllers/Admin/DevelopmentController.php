@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Development;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class DevelopmentController extends Controller
@@ -26,6 +27,50 @@ class DevelopmentController extends Controller
         'preventa' => 'Preventa',
         'obra_iniciada' => 'Obra iniciada',
         'entrega_inmediata' => 'Entrega inmediata',
+    ];
+
+    public const DETAIL_LABELS = [
+        'construction_m2' => 'm2 de construccion',
+        'land_m2' => 'm2 de terreno',
+        'front_m' => 'Frente (m)',
+        'depth_m' => 'Fondo (m)',
+        'levels' => 'Niveles',
+        'bedrooms' => 'Recamaras',
+        'full_bathrooms' => 'Banos completos',
+        'half_bathrooms' => 'Medios banos',
+        'parking_spaces' => 'Estacionamientos',
+        'ground_floor_bedroom' => 'Recamara en planta baja',
+        'street_type' => 'Privada o pie de calle',
+        'equipment' => 'Equipamiento',
+        'orientation' => 'Orientacion',
+        'service_room' => 'Cuarto de servicio',
+        'pool' => 'Alberca',
+        'family_room' => 'Family room',
+        'solar_panel_preparation' => 'Preparacion de paneles solares',
+        'ev_charger_preparation' => 'Preparacion cargador de auto',
+        'floor_level' => 'Nivel / piso',
+        'storage' => 'Bodega / storage',
+        'security_24_7' => 'Seguridad 24/7',
+        'balcony' => 'Balcon',
+        'building_floors' => 'Cantidad de pisos',
+        'elevator' => 'Elevador',
+        'elevators_count' => 'No. de elevadores',
+        'trash_chute' => 'Shute basura',
+        'covered_parking' => 'Estacionamiento techado',
+        'ocean_view' => 'Vista al mar',
+        'vacation_rental_program' => 'Programa renta vacacional',
+        'estimated_yield' => 'Rendimiento estimado (%)',
+        'primary_bedroom_ocean_view' => 'Recamara principal con vista al mar',
+        'rooftop' => 'Rooftop',
+        'water_supply' => 'Agua potable o pipa',
+        'sea_access' => 'Acceso al mar',
+        'land_use' => 'Uso de suelo',
+        'available_services' => 'Servicios disponibles',
+        'construction_restrictions' => 'Restricciones de construccion',
+        'bathrooms' => 'Banos',
+        'permitted_use' => 'Uso permitido',
+        'rent_option' => 'Opcion de renta',
+        'delivery_condition' => 'Entrega',
     ];
 
     public function index()
@@ -70,6 +115,52 @@ class DevelopmentController extends Controller
         return redirect()
             ->route('admin.developments.index')
             ->with('status', 'Desarrollo creado correctamente.');
+    }
+
+    public function show(Development $development)
+    {
+        return view('admin.developments.show', [
+            'development' => $development,
+            'propertyTypes' => self::PROPERTY_TYPES,
+            'statuses' => self::STATUSES,
+            'detailLabels' => self::DETAIL_LABELS,
+        ]);
+    }
+
+    public function edit(Development $development)
+    {
+        return view('admin.developments.edit', [
+            'development' => $development,
+            'propertyTypes' => self::PROPERTY_TYPES,
+            'statuses' => self::STATUSES,
+        ]);
+    }
+
+    public function update(Request $request, Development $development)
+    {
+        $data = $this->validatedData($request);
+        $data['description'] = $data['description'] ?? null;
+        $data['amenities'] = $this->linesToArray($data['amenities']);
+        $data['property_details'] = $this->normalizeDetails(
+            $data['property_type'],
+            $data['property_details'] ?? []
+        );
+
+        if ($request->hasFile('logo')) {
+            $this->deletePublicFile($development->logo_path);
+            $data['logo_path'] = $request->file('logo')->store('developments/logos', 'public');
+        }
+
+        if ($request->hasFile('cover_image')) {
+            $this->deletePublicFile($development->cover_image_path);
+            $data['cover_image_path'] = $request->file('cover_image')->store('developments/covers', 'public');
+        }
+
+        $development->update($data);
+
+        return redirect()
+            ->route('admin.developments.show', $development)
+            ->with('status', 'Desarrollo actualizado correctamente.');
     }
 
     private function validatedData(Request $request): array
@@ -208,5 +299,12 @@ class DevelopmentController extends Controller
             ->filter()
             ->values()
             ->all();
+    }
+
+    private function deletePublicFile(?string $path): void
+    {
+        if ($path) {
+            Storage::disk('public')->delete($path);
+        }
     }
 }

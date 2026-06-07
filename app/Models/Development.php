@@ -48,6 +48,11 @@ class Development extends Model
         return $this->cover_image_path ? Storage::disk('public')->url($this->cover_image_path) : null;
     }
 
+    public function displayImageUrl(): ?string
+    {
+        return $this->coverImageUrl() ?: $this->logoUrl();
+    }
+
     protected function casts(): array
     {
         return [

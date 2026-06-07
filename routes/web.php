@@ -49,6 +49,9 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('desarrollos', [DevelopmentController::class, 'index'])->name('developments.index');
     Route::get('desarrollos/crear', [DevelopmentController::class, 'create'])->name('developments.create');
     Route::post('desarrollos', [DevelopmentController::class, 'store'])->name('developments.store');
+    Route::get('desarrollos/{development}', [DevelopmentController::class, 'show'])->name('developments.show');
+    Route::get('desarrollos/{development}/editar', [DevelopmentController::class, 'edit'])->name('developments.edit');
+    Route::match(['put', 'patch'], 'desarrollos/{development}', [DevelopmentController::class, 'update'])->name('developments.update');
     Route::resource('usuarios', UserController::class)
         ->except(['show'])
         ->names('users')

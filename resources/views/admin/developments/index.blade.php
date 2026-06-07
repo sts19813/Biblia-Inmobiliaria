@@ -17,14 +17,42 @@
     </a>
 @endsection
 
+@push('styles')
+    <style>
+        .development-thumb {
+            width: 64px;
+            height: 56px;
+            border-radius: .65rem;
+            object-fit: cover;
+        }
+
+        .development-thumb-placeholder {
+            width: 64px;
+            height: 56px;
+            border-radius: .65rem;
+        }
+
+        .development-actions .btn {
+            width: 36px;
+            height: 36px;
+        }
+    </style>
+@endpush
+
 @section('content')
     <div class="card card-flush">
         <div class="card-header align-items-center py-5 gap-2 gap-md-5">
             <div class="card-title">
+                <div>
+                    <h3 class="fw-bold text-gray-900 mb-1">Todos los desarrollos</h3>
+                    <div class="text-muted fw-semibold fs-7">Gestiona tus proyectos inmobiliarios.</div>
+                </div>
+            </div>
+            <div class="card-toolbar">
                 <div class="d-flex align-items-center position-relative my-1">
                     <i class="ki-outline ki-magnifier fs-3 position-absolute ms-4"></i>
                     <input type="text" data-kt-development-table-filter="search"
-                        class="form-control form-control-solid w-250px ps-12" placeholder="Buscar desarrollo">
+                        class="form-control form-control-solid w-250px ps-12" placeholder="Buscar...">
                 </div>
             </div>
         </div>
@@ -35,11 +63,13 @@
                     <thead>
                         <tr class="text-start text-gray-500 fw-bold fs-7 text-uppercase gs-0">
                             <th>Desarrollo</th>
+                            <th>Imagen</th>
                             <th>Ubicacion</th>
                             <th>Tipo</th>
                             <th>Precio desde</th>
                             <th>Entrega</th>
                             <th>Disponibilidad</th>
+                            <th class="text-end">Acciones</th>
                         </tr>
                     </thead>
                     <tbody class="fw-semibold text-gray-600">
@@ -47,9 +77,22 @@
                             <tr>
                                 <td>
                                     <div class="d-flex flex-column">
-                                        <span class="text-gray-900 fw-bold">{{ $development->name }}</span>
+                                        <a href="{{ route('admin.developments.show', $development) }}"
+                                            class="text-gray-900 text-hover-primary fw-bold">
+                                            {{ $development->name }}
+                                        </a>
                                         <span class="text-muted">{{ $development->developer }}</span>
                                     </div>
+                                </td>
+                                <td>
+                                    @if ($development->displayImageUrl())
+                                        <img src="{{ $development->displayImageUrl() }}" alt="{{ $development->name }}"
+                                            class="development-thumb bg-light">
+                                    @else
+                                        <div class="development-thumb-placeholder bg-light-primary d-flex align-items-center justify-content-center">
+                                            <i class="ki-outline ki-picture fs-2x text-primary"></i>
+                                        </div>
+                                    @endif
                                 </td>
                                 <td>
                                     <div>{{ $development->city }}</div>
@@ -68,10 +111,24 @@
                                     </span>
                                 </td>
                                 <td>{{ $development->availability }}</td>
+                                <td class="text-end">
+                                    <div class="development-actions d-flex justify-content-end gap-2">
+                                        <a href="{{ route('admin.developments.show', $development) }}"
+                                            class="btn btn-icon btn-light btn-active-light-primary"
+                                            data-bs-toggle="tooltip" title="Visualizar">
+                                            <i class="ki-outline ki-eye fs-2"></i>
+                                        </a>
+                                        <a href="{{ route('admin.developments.edit', $development) }}"
+                                            class="btn btn-icon btn-light btn-active-light-primary"
+                                            data-bs-toggle="tooltip" title="Editar">
+                                            <i class="ki-outline ki-pencil fs-2"></i>
+                                        </a>
+                                    </div>
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center py-10">
+                                <td colspan="8" class="text-center py-10">
                                     <i class="ki-outline ki-home-2 fs-3x text-gray-400 mb-5"></i>
                                     <div class="fs-4 fw-bold text-gray-900">Sin desarrollos registrados.</div>
                                     <div class="text-gray-500 fw-semibold mt-1">Crea el primer desarrollo desde el boton superior.</div>
