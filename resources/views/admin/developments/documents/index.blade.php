@@ -14,10 +14,11 @@
         <div class="text-muted fw-semibold fs-6 mt-1">{{ $development->name }}</div>
     </div>
     <div class="d-flex gap-3">
-        <button type="button" class="btn btn-light-primary" data-copy-link="{{ route('public.documents.index', $development->document_share_token) }}">
+        <a href="{{ route('public.documents.index', $development->document_share_token) }}" target="_blank"
+            rel="noopener" class="btn btn-light-primary">
             <i class="ki-outline ki-share fs-2"></i>
             Compartir Mini Drive
-        </button>
+        </a>
         @if ($activeFolder)
             <label class="btn btn-primary mb-0" for="quick_upload_input">
                 <i class="ki-outline ki-file-up fs-2"></i>
@@ -283,16 +284,7 @@
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            var copyButton = document.querySelector('[data-copy-link]');
             var uploadForm = document.querySelector('[data-document-upload-form]');
-
-            if (copyButton) {
-                copyButton.addEventListener('click', function () {
-                    navigator.clipboard.writeText(copyButton.getAttribute('data-copy-link'));
-                    copyButton.classList.add('btn-success');
-                    setTimeout(function () { copyButton.classList.remove('btn-success'); }, 1400);
-                });
-            }
 
             if (!uploadForm) {
                 return;
