@@ -64,6 +64,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('desarrollos/{development}/documentos', [DevelopmentDocumentController::class, 'index'])->name('developments.documents.index');
     Route::post('desarrollos/{development}/documentos/carpetas', [DevelopmentDocumentController::class, 'storeFolder'])->name('developments.documents.folders.store');
     Route::post('desarrollos/{development}/documentos/carpetas/{folder}/archivos', [DevelopmentDocumentController::class, 'upload'])->name('developments.documents.files.upload');
+    Route::patch('desarrollos/{development}/documentos/archivos/{file}/renombrar', [DevelopmentDocumentController::class, 'renameFile'])->name('developments.documents.files.rename');
     Route::patch('desarrollos/{development}/documentos/archivos/{file}/destacado', [DevelopmentDocumentController::class, 'toggleFeatured'])->name('developments.documents.files.featured');
     Route::patch('desarrollos/{development}/documentos/archivos/{file}/visibilidad', [DevelopmentDocumentController::class, 'toggleVisibility'])->name('developments.documents.files.visibility');
     Route::delete('desarrollos/{development}/documentos/archivos/{file}', [DevelopmentDocumentController::class, 'destroyFile'])->name('developments.documents.files.destroy');

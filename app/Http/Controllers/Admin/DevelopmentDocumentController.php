@@ -65,7 +65,16 @@ class DevelopmentDocumentController extends Controller
             'files' => ['required', 'array'],
             'files.*' => ['file', 'max:51200'],
             'visibility' => ['required', 'in:public,private'],
+        ], [
+            'files.required' => 'Selecciona al menos un archivo para cargar.',
+            'files.array' => 'La carga debe incluir una lista de archivos.',
+            'files.*.file' => 'Cada elemento debe ser un archivo valido.',
+            'files.*.max' => 'El archivo no debe pesar mas de 50 MB.',
+            'visibility.required' => 'Selecciona la visibilidad del archivo.',
+            'visibility.in' => 'La visibilidad seleccionada no es valida.',
         ]);
+
+        $uploadedFiles = collect();
 
         foreach ($data['files'] as $file) {
             $originalName = $file->getClientOriginalName();
@@ -77,7 +86,7 @@ class DevelopmentDocumentController extends Controller
                 'public'
             );
 
-            $folder->files()->create([
+            $uploadedFiles->push($folder->files()->create([
                 'uploaded_by' => $request->user()->id,
                 'name' => pathinfo($originalName, PATHINFO_FILENAME),
                 'original_name' => $originalName,
@@ -87,12 +96,65 @@ class DevelopmentDocumentController extends Controller
                 'extension' => strtolower($extension),
                 'size_bytes' => $file->getSize(),
                 'visibility' => $data['visibility'],
+            ]));
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Archivos cargados correctamente.',
+                'files' => $uploadedFiles->map(fn (DevelopmentDocumentFile $file) => [
+                    'id' => $file->id,
+                    'name' => $file->original_name,
+                    'size' => $file->humanSize(),
+                    'uploaded_at' => $file->created_at?->format('d/m/Y H:i'),
+                ])->values(),
             ]);
         }
 
         return redirect()
             ->route('admin.developments.documents.index', ['development' => $development, 'folder' => $folder->id])
             ->with('status', 'Archivos cargados correctamente.');
+    }
+
+    public function renameFile(Request $request, Development $development, DevelopmentDocumentFile $file)
+    {
+        $this->assertFileBelongsToDevelopment($development, $file);
+        abort_unless($this->canUploadToFolder($request->user(), $file->folder), 403);
+
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:180'],
+        ]);
+
+        $name = trim($data['name']);
+        $extension = trim((string) $file->extension);
+        $extensionSuffix = $extension ? '.' . $extension : '';
+
+        if ($name === '') {
+            return back()->withErrors(['name' => 'El nombre del archivo es obligatorio.']);
+        }
+
+        if ($extensionSuffix && Str::endsWith(Str::lower($name), '.' . Str::lower($extension))) {
+            $name = substr($name, 0, -strlen($extensionSuffix));
+        }
+
+        $originalName = $extension ? $name . '.' . $extension : $name;
+
+        $file->update([
+            'name' => $name,
+            'original_name' => $originalName,
+        ]);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Archivo renombrado correctamente.',
+                'file' => [
+                    'id' => $file->id,
+                    'name' => $file->original_name,
+                ],
+            ]);
+        }
+
+        return back()->with('status', 'Archivo renombrado correctamente.');
     }
 
     public function toggleFeatured(Development $development, DevelopmentDocumentFile $file)

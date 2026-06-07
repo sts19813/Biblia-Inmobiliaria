@@ -60,6 +60,13 @@
             width: 38px;
             height: 38px;
         }
+
+        .document-upload-item {
+            border: 1px solid var(--bs-gray-200);
+            border-radius: .75rem;
+            padding: 1rem;
+            background-color: var(--bs-body-bg);
+        }
     </style>
 @endpush
 
@@ -131,6 +138,7 @@
                                         <th>Tamano</th>
                                         <th>Estado</th>
                                         <th>Subido por</th>
+                                        <th>Fecha de subida</th>
                                         <th class="text-end">Acciones</th>
                                     </tr>
                                 </thead>
@@ -164,7 +172,16 @@
                                                 </form>
                                             </td>
                                             <td>{{ $file->uploader?->name ?? 'Sistema' }}</td>
+                                            <td>{{ $file->created_at?->format('d/m/Y H:i') ?? '-' }}</td>
                                             <td class="text-end">
+                                                <button type="button"
+                                                    class="btn btn-icon btn-light btn-active-light-primary btn-sm"
+                                                    title="Renombrar"
+                                                    data-rename-file
+                                                    data-action="{{ route('admin.developments.documents.files.rename', [$development, $file]) }}"
+                                                    data-name="{{ $file->name }}">
+                                                    <i class="ki-outline ki-pencil fs-2"></i>
+                                                </button>
                                                 <a href="{{ $file->url() }}" target="_blank" class="btn btn-icon btn-light btn-active-light-primary btn-sm" title="Ver">
                                                     <i class="ki-outline ki-eye fs-2"></i>
                                                 </a>
@@ -189,7 +206,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="6" class="text-center py-10">
+                                            <td colspan="7" class="text-center py-10">
                                                 <i class="ki-outline ki-folder fs-3x text-gray-400 mb-4"></i>
                                                 <div class="fw-bold text-gray-900 fs-4">Carpeta vacia</div>
                                                 <div class="text-muted fw-semibold">Carga archivos para esta categoria.</div>
@@ -209,7 +226,13 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        <form method="POST" action="{{ route('admin.developments.documents.files.upload', [$development, $activeFolder]) }}" enctype="multipart/form-data" data-document-upload-form>
+                        <form method="POST"
+                            action="{{ route('admin.developments.documents.files.upload', [$development, $activeFolder]) }}"
+                            enctype="multipart/form-data"
+                            data-document-upload-form
+                            data-max-upload-size="{{ 50 * 1024 * 1024 }}"
+                            data-max-upload-label="50 MB"
+                            data-upload-url="{{ route('admin.developments.documents.files.upload', [$development, $activeFolder]) }}">
                             @csrf
                             <input id="quick_upload_input" type="file" name="files[]" class="d-none" multiple data-document-file-input>
                             <input type="hidden" name="visibility" value="public">
@@ -217,16 +240,13 @@
                                 <span>
                                     <i class="ki-outline ki-file-up fs-3x text-gray-500 d-block mb-4"></i>
                                     <span class="fw-bold fs-4 text-gray-900 d-block">Arrastra archivos aqui</span>
-                                    <span class="text-muted fw-semibold d-block mt-2">o haz clic para seleccionar archivos</span>
+                                    <span class="text-muted fw-semibold d-block mt-2">o haz clic para seleccionar y cargar automaticamente</span>
                                     <span class="text-muted fs-7 d-block mt-3">PDF, imagenes, videos, Excel y mas (max. 50MB por archivo)</span>
                                 </span>
                             </label>
-                            <div class="d-flex justify-content-between align-items-center mt-4">
-                                <div class="text-muted fw-semibold" data-document-file-summary>Sin archivos seleccionados.</div>
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="ki-outline ki-file-up fs-2"></i>
-                                    Cargar seleccion
-                                </button>
+                            <div class="mt-4">
+                                <div class="text-muted fw-semibold mb-3" data-document-file-summary>Sin cargas activas.</div>
+                                <div class="d-flex flex-column gap-3" data-document-upload-progress-list></div>
                             </div>
                         </form>
                     </div>
@@ -279,12 +299,84 @@
             @endif
         </div>
     </div>
+
+    <div class="modal fade" id="rename_document_file_modal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form method="POST" data-rename-file-form>
+                    @csrf
+                    @method('PATCH')
+                    <div class="modal-header">
+                        <h3 class="modal-title">Renombrar archivo</h3>
+                        <button type="button" class="btn btn-icon btn-sm btn-active-light-primary" data-bs-dismiss="modal" aria-label="Cerrar">
+                            <i class="ki-outline ki-cross fs-1"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <label for="document_file_name" class="form-label fw-semibold">Nombre del archivo</label>
+                        <input id="document_file_name" type="text" name="name" class="form-control form-control-solid" required maxlength="180">
+                        <div class="form-text">La extension se conserva automaticamente.</div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar nombre</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             var uploadForm = document.querySelector('[data-document-upload-form]');
+            var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+            function showToast(icon, title) {
+                if (window.Swal) {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: icon,
+                        title: title,
+                        showConfirmButton: false,
+                        timer: 4200,
+                        timerProgressBar: true
+                    });
+                    return;
+                }
+
+                window.alert(title);
+            }
+
+            var pendingToast = window.sessionStorage.getItem('document_upload_toast');
+
+            if (pendingToast) {
+                window.sessionStorage.removeItem('document_upload_toast');
+
+                try {
+                    pendingToast = JSON.parse(pendingToast);
+                    showToast(pendingToast.icon || 'success', pendingToast.title || 'Archivos cargados correctamente.');
+                } catch (error) {
+                    showToast('success', 'Archivos cargados correctamente.');
+                }
+            }
+
+            document.querySelectorAll('[data-rename-file]').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    var modalElement = document.getElementById('rename_document_file_modal');
+                    var renameForm = document.querySelector('[data-rename-file-form]');
+                    var nameInput = document.getElementById('document_file_name');
+
+                    renameForm.action = button.dataset.action;
+                    nameInput.value = button.dataset.name || '';
+
+                    if (window.bootstrap && bootstrap.Modal) {
+                        bootstrap.Modal.getOrCreateInstance(modalElement).show();
+                    }
+                });
+            });
 
             if (!uploadForm) {
                 return;
@@ -293,13 +385,238 @@
             var input = uploadForm.querySelector('[data-document-file-input]');
             var dropzone = uploadForm.querySelector('[data-document-dropzone]');
             var summary = uploadForm.querySelector('[data-document-file-summary]');
+            var progressList = uploadForm.querySelector('[data-document-upload-progress-list]');
+            var uploadUrl = uploadForm.dataset.uploadUrl || uploadForm.action;
+            var maxUploadSize = parseInt(uploadForm.dataset.maxUploadSize || '52428800', 10);
+            var maxUploadLabel = uploadForm.dataset.maxUploadLabel || '50 MB';
+            var activeUploads = 0;
+            var finishedUploads = 0;
+            var successfulUploads = 0;
+            var failedUploads = 0;
+            var firstUploadError = '';
 
-            function updateSummary(files) {
-                summary.textContent = files.length ? files.length + ' archivo(s) seleccionado(s).' : 'Sin archivos seleccionados.';
+            function formatBytes(bytes) {
+                if (!bytes) {
+                    return '0 B';
+                }
+
+                var units = ['B', 'KB', 'MB', 'GB'];
+                var size = bytes;
+                var unitIndex = 0;
+
+                while (size >= 1024 && unitIndex < units.length - 1) {
+                    size = size / 1024;
+                    unitIndex++;
+                }
+
+                return (unitIndex === 0 ? size : size.toFixed(1)) + ' ' + units[unitIndex];
             }
 
+            function createProgressItem(file) {
+                var item = document.createElement('div');
+                item.className = 'document-upload-item';
+                item.innerHTML =
+                    '<div class="d-flex justify-content-between align-items-center mb-2">' +
+                        '<div class="min-w-0">' +
+                            '<div class="fw-bold text-gray-900 text-truncate"></div>' +
+                            '<div class="text-muted fs-7"></div>' +
+                        '</div>' +
+                        '<span class="badge badge-light-primary" data-upload-status>0%</span>' +
+                    '</div>' +
+                    '<div class="progress h-6px">' +
+                        '<div class="progress-bar bg-primary" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>' +
+                    '</div>';
+
+                item.querySelector('.fw-bold').textContent = file.name;
+                item.querySelector('.text-muted').textContent = formatBytes(file.size);
+                progressList.prepend(item);
+
+                return item;
+            }
+
+            function setProgress(item, percent, statusText, statusClass) {
+                var progressBar = item.querySelector('.progress-bar');
+                var status = item.querySelector('[data-upload-status]');
+
+                progressBar.style.width = percent + '%';
+                progressBar.setAttribute('aria-valuenow', percent);
+                status.textContent = statusText || percent + '%';
+
+                if (statusClass) {
+                    status.className = 'badge ' + statusClass;
+                }
+            }
+
+            function finishUpload(item, ok, message) {
+                finishedUploads++;
+                successfulUploads += ok ? 1 : 0;
+                failedUploads += ok ? 0 : 1;
+
+                if (!ok && message && !firstUploadError) {
+                    firstUploadError = message;
+                }
+
+                setProgress(
+                    item,
+                    100,
+                    ok ? 'Cargado' : 'Error',
+                    ok ? 'badge-light-success' : 'badge-light-danger'
+                );
+
+                if (!ok && message) {
+                    var errorText = document.createElement('div');
+                    errorText.className = 'text-danger fs-7 mt-2';
+                    errorText.textContent = message;
+                    item.appendChild(errorText);
+                }
+
+                summary.textContent = finishedUploads + ' de ' + activeUploads + ' archivo(s) procesado(s).';
+
+                if (finishedUploads === activeUploads) {
+                    if (successfulUploads > 0) {
+                        var toastTitle = successfulUploads === 1
+                            ? 'Archivo cargado correctamente.'
+                            : successfulUploads + ' archivos cargados correctamente.';
+
+                        if (failedUploads > 0) {
+                            toastTitle += ' ' + failedUploads + ' no se pudieron cargar.';
+                        }
+
+                        summary.textContent = 'Carga finalizada. Actualizando listado...';
+                        window.sessionStorage.setItem('document_upload_toast', JSON.stringify({
+                            icon: failedUploads > 0 ? 'warning' : 'success',
+                            title: toastTitle
+                        }));
+
+                        window.setTimeout(function () {
+                            window.location.reload();
+                        }, 700);
+                    } else {
+                        summary.textContent = 'No se cargaron archivos. Revisa los errores e intenta de nuevo.';
+                        showToast('error', failedUploads === 1 && firstUploadError
+                            ? firstUploadError
+                            : 'No se pudieron cargar los archivos. Revisa el detalle de cada error.');
+                    }
+                }
+            }
+
+            function firstValidationError(response) {
+                if (!response || !response.errors) {
+                    return response && response.message ? response.message : null;
+                }
+
+                for (var key in response.errors) {
+                    if (Object.prototype.hasOwnProperty.call(response.errors, key) && response.errors[key].length) {
+                        return response.errors[key][0];
+                    }
+                }
+
+                return response.message || null;
+            }
+
+            function extractUploadError(request) {
+                if (request.status === 413) {
+                    return 'El archivo supera el limite permitido por el servidor. Maximo: ' + maxUploadLabel + '.';
+                }
+
+                if (request.status === 401 || request.status === 419) {
+                    return 'Tu sesion expiro. Actualiza la pagina e inicia sesion nuevamente.';
+                }
+
+                if (request.status === 403) {
+                    return 'No tienes permisos para subir archivos en esta carpeta.';
+                }
+
+                if (request.status === 404) {
+                    return 'La carpeta ya no esta disponible. Actualiza la pagina.';
+                }
+
+                if (request.responseText) {
+                    try {
+                        var response = JSON.parse(request.responseText);
+                        return firstValidationError(response) || 'No se pudo cargar el archivo.';
+                    } catch (error) {
+                        return request.status
+                            ? 'No se pudo cargar el archivo. Codigo HTTP ' + request.status + '.'
+                            : 'No se pudo cargar el archivo.';
+                    }
+                }
+
+                return request.status
+                    ? 'No se pudo cargar el archivo. Codigo HTTP ' + request.status + '.'
+                    : 'No se pudo cargar el archivo.';
+            }
+
+            function uploadSingleFile(file) {
+                var item = createProgressItem(file);
+
+                if (file.size > maxUploadSize) {
+                    finishUpload(item, false, 'El archivo pesa ' + formatBytes(file.size) + '. El maximo permitido es ' + maxUploadLabel + '.');
+                    return;
+                }
+
+                var request = new XMLHttpRequest();
+                var formData = new FormData();
+
+                formData.append('files[]', file);
+                formData.append('visibility', 'public');
+
+                request.open('POST', uploadUrl, true);
+                request.setRequestHeader('X-CSRF-TOKEN', csrfToken);
+                request.setRequestHeader('Accept', 'application/json');
+
+                request.upload.addEventListener('progress', function (event) {
+                    if (!event.lengthComputable) {
+                        return;
+                    }
+
+                    var percent = Math.min(99, Math.round((event.loaded / event.total) * 100));
+                    setProgress(item, percent);
+                });
+
+                request.addEventListener('load', function () {
+                    var ok = request.status >= 200 && request.status < 300;
+                    var message = ok ? '' : extractUploadError(request);
+
+                    finishUpload(item, ok, message);
+                });
+
+                request.addEventListener('error', function () {
+                    finishUpload(item, false, 'Error de conexion al cargar el archivo.');
+                });
+
+                request.send(formData);
+            }
+
+            function uploadFiles(fileList) {
+                var files = Array.prototype.slice.call(fileList || []);
+
+                if (!files.length) {
+                    return;
+                }
+
+                if (finishedUploads === activeUploads) {
+                    activeUploads = 0;
+                    finishedUploads = 0;
+                    successfulUploads = 0;
+                    failedUploads = 0;
+                    firstUploadError = '';
+                    progressList.innerHTML = '';
+                }
+
+                activeUploads += files.length;
+                summary.textContent = 'Cargando ' + activeUploads + ' archivo(s)...';
+
+                files.forEach(uploadSingleFile);
+                input.value = '';
+            }
+
+            uploadForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+            });
+
             input.addEventListener('change', function () {
-                updateSummary(input.files);
+                uploadFiles(input.files);
             });
 
             ['dragenter', 'dragover'].forEach(function (eventName) {
@@ -317,8 +634,7 @@
             });
 
             dropzone.addEventListener('drop', function (event) {
-                input.files = event.dataTransfer.files;
-                updateSummary(input.files);
+                uploadFiles(event.dataTransfer.files);
             });
         });
     </script>
