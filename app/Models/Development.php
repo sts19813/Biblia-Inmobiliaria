@@ -5,7 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 #[Fillable([
     'name',
@@ -33,10 +35,32 @@ use Illuminate\Support\Facades\Storage;
     'maintenance_fee',
     'property_details',
     'created_by',
+    'document_share_token',
 ])]
 class Development extends Model
 {
     use HasFactory;
+
+    public const DOCUMENT_FOLDERS = [
+        'Brochure',
+        'Ficha tecnica',
+        'Memoria descriptiva',
+        'Terminos y condiciones',
+        'Galeria de imagenes',
+        'Avance de obra',
+        'Videos',
+        'Carpeta Drive',
+        'Legal',
+        'Lista de Precios',
+        'Cv Desarrollador',
+        'Cv Contructor',
+        'Planos',
+        'Chepinas',
+        'Ubicacion',
+        'Faqs',
+        'Cta Bancaria',
+        'Recorrido Virtual',
+    ];
 
     public function logoUrl(): ?string
     {
@@ -51,6 +75,34 @@ class Development extends Model
     public function displayImageUrl(): ?string
     {
         return $this->coverImageUrl() ?: $this->logoUrl();
+    }
+
+    public function documentFolders(): HasMany
+    {
+        return $this->hasMany(DevelopmentDocumentFolder::class)->orderBy('sort_order')->orderBy('name');
+    }
+
+    public function ensureDocumentShareToken(): string
+    {
+        if (! $this->document_share_token) {
+            $this->forceFill(['document_share_token' => Str::random(40)])->save();
+        }
+
+        return $this->document_share_token;
+    }
+
+    public function ensureDocumentFolders(): void
+    {
+        foreach (self::DOCUMENT_FOLDERS as $index => $name) {
+            $this->documentFolders()->firstOrCreate(
+                ['slug' => Str::slug($name)],
+                [
+                    'name' => $name,
+                    'sort_order' => $index + 1,
+                    'is_system' => true,
+                ]
+            );
+        }
     }
 
     protected function casts(): array

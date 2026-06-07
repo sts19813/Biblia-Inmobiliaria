@@ -1,5 +1,7 @@
 @php
     $isEditing = $user->exists;
+    $selectedRole = old('role', $user->roles->first()?->name ?? $user->role ?? 'asesor');
+    $selectedPermissions = old('permissions', $user->permissions->pluck('name')->all());
 @endphp
 
 <div class="row g-8">
@@ -104,9 +106,9 @@
                         <label class="required form-label">Rol</label>
                         <select name="role" class="form-select form-select-solid @error('role') is-invalid @enderror"
                             data-control="select2" data-hide-search="true" required>
-                            @foreach ($roles as $value => $label)
-                                <option value="{{ $value }}" @selected(old('role', $user->role) === $value)>
-                                    {{ $label }}
+                            @foreach ($roles as $role)
+                                <option value="{{ $role->name }}" @selected($selectedRole === $role->name)>
+                                    {{ $roleLabels[$role->name] ?? ucfirst(str_replace('_', ' ', $role->name)) }}
                                 </option>
                             @endforeach
                         </select>
@@ -122,6 +124,24 @@
                             class="form-control form-control-solid @error('ampi_certificate') is-invalid @enderror"
                             placeholder="Folio, clave o estatus">
                         @error('ampi_certificate')
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Permisos directos</label>
+                        <div class="row g-3">
+                            @foreach ($permissions as $permission)
+                                <div class="col-md-6 col-xl-4">
+                                    <label class="form-check form-check-custom form-check-solid">
+                                        <input class="form-check-input" type="checkbox" name="permissions[]"
+                                            value="{{ $permission->name }}" @checked(in_array($permission->name, $selectedPermissions, true))>
+                                        <span class="form-check-label">{{ $permission->name }}</span>
+                                    </label>
+                                </div>
+                            @endforeach
+                        </div>
+                        @error('permissions')
                             <div class="invalid-feedback d-block">{{ $message }}</div>
                         @enderror
                     </div>

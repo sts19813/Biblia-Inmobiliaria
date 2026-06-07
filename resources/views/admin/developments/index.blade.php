@@ -123,6 +123,11 @@
                                             data-bs-toggle="tooltip" title="Editar">
                                             <i class="ki-outline ki-pencil fs-2"></i>
                                         </a>
+                                        <a href="{{ route('admin.developments.documents.index', $development) }}"
+                                            class="btn btn-icon btn-light btn-active-light-primary"
+                                            data-bs-toggle="tooltip" title="Documentos">
+                                            <i class="ki-outline ki-folder fs-2"></i>
+                                        </a>
                                     </div>
                                 </td>
                             </tr>
