@@ -4,6 +4,26 @@
     $selectedStatus = old('status', $development->status ?: 'preventa');
     $amenitiesText = old('amenities', implode(PHP_EOL, $development->amenities ?? []));
     $detailValue = fn (string $key) => old('property_details.' . $key, $details[$key] ?? '');
+    $normalizeSelectValue = function ($value) {
+        if (is_bool($value)) {
+            return $value ? 'si' : 'no';
+        }
+
+        return str($value ?? '')
+            ->lower()
+            ->ascii()
+            ->replace([' ', '-'], '_')
+            ->value();
+    };
+    $isSelectedOption = function (string $key, string $optionValue, string $optionLabel) use ($detailValue, $normalizeSelectValue) {
+        $currentValue = $normalizeSelectValue($detailValue($key));
+
+        return $currentValue !== ''
+            && in_array($currentValue, [
+                $normalizeSelectValue($optionValue),
+                $normalizeSelectValue($optionLabel),
+            ], true);
+    };
     $logoUrl = $development->exists ? $development->logoUrl() : null;
     $coverImageUrl = $development->exists ? $development->coverImageUrl() : null;
 
@@ -464,8 +484,9 @@
                 @foreach ($sections as $type => $section)
                     @php
                         $appliesTo = $section['applies_to'] ?? [$type];
+                        $isActiveSection = in_array($selectedType, $appliesTo, true);
                     @endphp
-                    <div data-development-section="{{ implode(' ', $appliesTo) }}" @class(['d-none' => ! in_array($selectedType, $appliesTo, true)])>
+                    <div data-development-section="{{ implode(' ', $appliesTo) }}" @class(['d-none' => ! $isActiveSection])>
                         <div class="d-flex align-items-center mb-6">
                             <div class="symbol symbol-45px me-4">
                                 <div class="symbol-label bg-light-primary">
@@ -495,10 +516,11 @@
                                     @if ($field['type'] === 'select')
                                         <select id="{{ $fieldId }}" name="{{ $fieldName }}"
                                             class="form-select form-select-solid @error('property_details.' . $field['name']) is-invalid @enderror"
-                                            data-detail-input data-detail-required="{{ $isRequired ? '1' : '0' }}">
+                                            data-detail-input data-detail-required="{{ $isRequired ? '1' : '0' }}"
+                                            @disabled(! $isActiveSection) @required($isActiveSection && $isRequired)>
                                             <option value="">Seleccionar</option>
                                             @foreach ($field['options'] as $optionValue => $optionLabel)
-                                                <option value="{{ $optionValue }}" @selected($detailValue($field['name']) === $optionValue)>
+                                                <option value="{{ $optionValue }}" @selected($isSelectedOption($field['name'], (string) $optionValue, (string) $optionLabel))>
                                                     {{ $optionLabel }}
                                                 </option>
                                             @endforeach
@@ -506,13 +528,15 @@
                                     @elseif ($field['type'] === 'textarea')
                                         <textarea id="{{ $fieldId }}" name="{{ $fieldName }}" rows="3"
                                             class="form-control form-control-solid @error('property_details.' . $field['name']) is-invalid @enderror"
-                                            data-detail-input data-detail-required="{{ $isRequired ? '1' : '0' }}">{{ $detailValue($field['name']) }}</textarea>
+                                            data-detail-input data-detail-required="{{ $isRequired ? '1' : '0' }}"
+                                            @disabled(! $isActiveSection) @required($isActiveSection && $isRequired)>{{ $detailValue($field['name']) }}</textarea>
                                     @else
                                         <input id="{{ $fieldId }}" type="{{ $field['type'] }}" name="{{ $fieldName }}"
                                             value="{{ $detailValue($field['name']) }}"
                                             class="form-control form-control-solid @error('property_details.' . $field['name']) is-invalid @enderror"
                                             min="0" step="{{ $field['step'] ?? '1' }}"
-                                            data-detail-input data-detail-required="{{ $isRequired ? '1' : '0' }}">
+                                            data-detail-input data-detail-required="{{ $isRequired ? '1' : '0' }}"
+                                            @disabled(! $isActiveSection) @required($isActiveSection && $isRequired)>
                                     @endif
 
                                     @error('property_details.' . $field['name'])

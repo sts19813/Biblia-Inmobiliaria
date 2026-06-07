@@ -73,6 +73,35 @@ class DevelopmentController extends Controller
         'delivery_condition' => 'Entrega',
     ];
 
+    public const DETAIL_FIELD_GROUPS = [
+        'casa' => [
+            'construction_m2', 'land_m2', 'front_m', 'depth_m', 'levels', 'bedrooms', 'full_bathrooms',
+            'half_bathrooms', 'parking_spaces', 'ground_floor_bedroom', 'street_type', 'equipment',
+            'orientation', 'service_room', 'pool', 'family_room', 'solar_panel_preparation',
+            'ev_charger_preparation',
+        ],
+        'departamento' => [
+            'construction_m2', 'floor_level', 'bedrooms', 'full_bathrooms', 'half_bathrooms',
+            'parking_spaces', 'storage', 'security_24_7', 'orientation', 'equipment', 'balcony',
+            'building_floors', 'elevator', 'elevators_count', 'pool', 'trash_chute',
+            'covered_parking', 'solar_panel_preparation', 'ev_charger_preparation',
+        ],
+        'playa' => [
+            'construction_m2', 'bedrooms', 'full_bathrooms', 'half_bathrooms', 'parking_spaces',
+            'ocean_view', 'vacation_rental_program', 'estimated_yield', 'primary_bedroom_ocean_view',
+            'elevator', 'rooftop', 'water_supply', 'sea_access', 'service_room', 'equipment',
+        ],
+        'terreno' => [
+            'land_m2', 'front_m', 'depth_m', 'land_use', 'available_services',
+            'construction_restrictions', 'street_type', 'orientation',
+        ],
+        'comercial' => [
+            'construction_m2', 'front_m', 'depth_m', 'bathrooms', 'parking_spaces', 'permitted_use',
+            'rent_option', 'delivery_condition', 'building_floors', 'elevator', 'elevators_count',
+            'orientation',
+        ],
+    ];
+
     public function index()
     {
         return view('admin.developments.index', [
@@ -124,6 +153,7 @@ class DevelopmentController extends Controller
             'propertyTypes' => self::PROPERTY_TYPES,
             'statuses' => self::STATUSES,
             'detailLabels' => self::DETAIL_LABELS,
+            'detailFields' => $this->detailFieldsFor($development->property_type),
         ]);
     }
 
@@ -205,6 +235,9 @@ class DevelopmentController extends Controller
 
     private function detailRules(?string $propertyType): array
     {
+        $yesNo = ['si', 'no'];
+        $orientations = ['norte', 'sur', 'oriente', 'poniente'];
+
         if (in_array($propertyType, self::COMMERCIAL_PROPERTY_TYPES, true)) {
             return [
                 'construction_m2' => ['required', 'numeric', 'min:0'],
@@ -212,7 +245,13 @@ class DevelopmentController extends Controller
                 'depth_m' => ['nullable', 'numeric', 'min:0'],
                 'bathrooms' => ['required', 'integer', 'min:0'],
                 'parking_spaces' => ['nullable', 'integer', 'min:0'],
-                'permitted_use' => ['required', 'string', 'max:80'],
+                'permitted_use' => ['required', Rule::in(['comercial', 'oficinas', 'mixto'])],
+                'rent_option' => ['nullable', Rule::in($yesNo)],
+                'delivery_condition' => ['nullable', Rule::in(['obra_gris', 'fachada_cristal', 'equipado'])],
+                'building_floors' => ['nullable', 'integer', 'min:0'],
+                'elevator' => ['nullable', Rule::in($yesNo)],
+                'elevators_count' => ['nullable', 'integer', 'min:0'],
+                'orientation' => ['nullable', Rule::in($orientations)],
             ];
         }
 
@@ -227,6 +266,15 @@ class DevelopmentController extends Controller
                 'full_bathrooms' => ['required', 'integer', 'min:0'],
                 'half_bathrooms' => ['nullable', 'integer', 'min:0'],
                 'parking_spaces' => ['required', 'integer', 'min:0'],
+                'ground_floor_bedroom' => ['nullable', Rule::in($yesNo)],
+                'street_type' => ['nullable', Rule::in(['privada', 'pie_de_calle'])],
+                'equipment' => ['nullable', 'string'],
+                'orientation' => ['nullable', Rule::in($orientations)],
+                'service_room' => ['nullable', Rule::in($yesNo)],
+                'pool' => ['nullable', Rule::in($yesNo)],
+                'family_room' => ['nullable', Rule::in($yesNo)],
+                'solar_panel_preparation' => ['nullable', Rule::in($yesNo)],
+                'ev_charger_preparation' => ['nullable', Rule::in($yesNo)],
             ],
             'departamento' => [
                 'construction_m2' => ['required', 'numeric', 'min:0'],
@@ -235,6 +283,19 @@ class DevelopmentController extends Controller
                 'full_bathrooms' => ['required', 'integer', 'min:0'],
                 'half_bathrooms' => ['nullable', 'integer', 'min:0'],
                 'parking_spaces' => ['required', 'integer', 'min:0'],
+                'storage' => ['nullable', Rule::in($yesNo)],
+                'security_24_7' => ['nullable', Rule::in($yesNo)],
+                'orientation' => ['nullable', Rule::in($orientations)],
+                'equipment' => ['nullable', 'string'],
+                'balcony' => ['nullable', Rule::in($yesNo)],
+                'building_floors' => ['nullable', 'integer', 'min:0'],
+                'elevator' => ['nullable', Rule::in($yesNo)],
+                'elevators_count' => ['nullable', 'integer', 'min:0'],
+                'pool' => ['nullable', Rule::in($yesNo)],
+                'trash_chute' => ['nullable', Rule::in($yesNo)],
+                'covered_parking' => ['nullable', Rule::in($yesNo)],
+                'solar_panel_preparation' => ['nullable', Rule::in($yesNo)],
+                'ev_charger_preparation' => ['nullable', Rule::in($yesNo)],
             ],
             'playa' => [
                 'construction_m2' => ['required', 'numeric', 'min:0'],
@@ -242,13 +303,26 @@ class DevelopmentController extends Controller
                 'full_bathrooms' => ['required', 'integer', 'min:0'],
                 'half_bathrooms' => ['nullable', 'integer', 'min:0'],
                 'parking_spaces' => ['nullable', 'integer', 'min:0'],
+                'ocean_view' => ['nullable', Rule::in(['frontal', 'lateral', 'sin_vista'])],
+                'vacation_rental_program' => ['nullable', Rule::in($yesNo)],
                 'estimated_yield' => ['nullable', 'numeric', 'between:0,100'],
+                'primary_bedroom_ocean_view' => ['nullable', Rule::in($yesNo)],
+                'elevator' => ['nullable', Rule::in($yesNo)],
+                'rooftop' => ['nullable', Rule::in($yesNo)],
+                'water_supply' => ['nullable', Rule::in(['agua_potable', 'pipa', 'mixto'])],
+                'sea_access' => ['nullable', Rule::in(['primera_fila', 'segunda_fila', 'tercera_fila', 'posterior'])],
+                'service_room' => ['nullable', Rule::in($yesNo)],
+                'equipment' => ['nullable', 'string'],
             ],
             'terreno' => [
                 'land_m2' => ['required', 'numeric', 'min:0'],
                 'front_m' => ['required', 'numeric', 'min:0'],
                 'depth_m' => ['required', 'numeric', 'min:0'],
-                'land_use' => ['required', 'string', 'max:80'],
+                'land_use' => ['required', Rule::in(['residencial', 'mixto', 'comercial'])],
+                'available_services' => ['nullable', 'string'],
+                'construction_restrictions' => ['nullable', 'string'],
+                'street_type' => ['nullable', Rule::in(['privada', 'pie_de_calle'])],
+                'orientation' => ['nullable', Rule::in($orientations)],
             ],
             default => [],
         };
@@ -256,38 +330,8 @@ class DevelopmentController extends Controller
 
     private function normalizeDetails(string $propertyType, array $details): array
     {
-        $allowedFields = [
-            'casa' => [
-                'construction_m2', 'land_m2', 'front_m', 'depth_m', 'levels', 'bedrooms', 'full_bathrooms',
-                'half_bathrooms', 'parking_spaces', 'ground_floor_bedroom', 'street_type', 'equipment',
-                'orientation', 'service_room', 'pool', 'family_room', 'solar_panel_preparation',
-                'ev_charger_preparation',
-            ],
-            'departamento' => [
-                'construction_m2', 'floor_level', 'bedrooms', 'full_bathrooms', 'half_bathrooms',
-                'parking_spaces', 'storage', 'security_24_7', 'orientation', 'equipment', 'balcony',
-                'building_floors', 'elevator', 'elevators_count', 'pool', 'trash_chute',
-                'covered_parking', 'solar_panel_preparation', 'ev_charger_preparation',
-            ],
-            'playa' => [
-                'construction_m2', 'bedrooms', 'full_bathrooms', 'half_bathrooms', 'parking_spaces',
-                'ocean_view', 'vacation_rental_program', 'estimated_yield', 'primary_bedroom_ocean_view',
-                'elevator', 'rooftop', 'water_supply', 'sea_access', 'service_room', 'equipment',
-            ],
-            'terreno' => [
-                'land_m2', 'front_m', 'depth_m', 'land_use', 'available_services',
-                'construction_restrictions', 'street_type', 'orientation',
-            ],
-            'comercial' => [
-                'construction_m2', 'front_m', 'depth_m', 'bathrooms', 'parking_spaces', 'permitted_use',
-                'rent_option', 'delivery_condition', 'building_floors', 'elevator', 'elevators_count',
-                'orientation',
-            ],
-        ];
-        $detailGroup = in_array($propertyType, self::COMMERCIAL_PROPERTY_TYPES, true) ? 'comercial' : $propertyType;
-
         return collect($details)
-            ->only($allowedFields[$detailGroup] ?? [])
+            ->only($this->detailFieldsFor($propertyType))
             ->filter(fn ($value) => $value !== null && $value !== '')
             ->all();
     }
@@ -306,5 +350,12 @@ class DevelopmentController extends Controller
         if ($path) {
             Storage::disk('public')->delete($path);
         }
+    }
+
+    private function detailFieldsFor(string $propertyType): array
+    {
+        $detailGroup = in_array($propertyType, self::COMMERCIAL_PROPERTY_TYPES, true) ? 'comercial' : $propertyType;
+
+        return self::DETAIL_FIELD_GROUPS[$detailGroup] ?? [];
     }
 }

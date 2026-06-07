@@ -20,6 +20,73 @@
 
         return ucfirst(str_replace('_', ' ', $normalized));
     };
+
+    $yesNoOptions = ['si' => 'Si', 'no' => 'No'];
+    $detailOptions = [
+        'ground_floor_bedroom' => $yesNoOptions,
+        'street_type' => ['privada' => 'Privada', 'pie_de_calle' => 'Pie de calle'],
+        'orientation' => [
+            'norte' => 'Norte',
+            'sur' => 'Sur',
+            'oriente' => 'Oriente',
+            'poniente' => 'Poniente',
+        ],
+        'service_room' => $yesNoOptions,
+        'pool' => $yesNoOptions,
+        'family_room' => $yesNoOptions,
+        'solar_panel_preparation' => $yesNoOptions,
+        'ev_charger_preparation' => $yesNoOptions,
+        'storage' => $yesNoOptions,
+        'security_24_7' => $yesNoOptions,
+        'balcony' => $yesNoOptions,
+        'elevator' => $yesNoOptions,
+        'trash_chute' => $yesNoOptions,
+        'covered_parking' => $yesNoOptions,
+        'ocean_view' => ['frontal' => 'Frontal', 'lateral' => 'Lateral', 'sin_vista' => 'Sin vista'],
+        'vacation_rental_program' => $yesNoOptions,
+        'primary_bedroom_ocean_view' => $yesNoOptions,
+        'rooftop' => $yesNoOptions,
+        'water_supply' => ['agua_potable' => 'Agua potable', 'pipa' => 'Pipa de agua', 'mixto' => 'Mixto'],
+        'sea_access' => [
+            'primera_fila' => 'Primera fila',
+            'segunda_fila' => 'Segunda fila',
+            'tercera_fila' => 'Tercera fila',
+            'posterior' => 'Posterior',
+        ],
+        'land_use' => ['residencial' => 'Residencial', 'mixto' => 'Mixto', 'comercial' => 'Comercial'],
+        'permitted_use' => ['comercial' => 'Comercial', 'oficinas' => 'Oficinas', 'mixto' => 'Mixto'],
+        'rent_option' => $yesNoOptions,
+        'delivery_condition' => [
+            'obra_gris' => 'Obra gris',
+            'fachada_cristal' => 'Fachada de cristal',
+            'equipado' => 'Equipado',
+        ],
+    ];
+    $normalizeSelectValue = function ($value) {
+        if (is_bool($value)) {
+            return $value ? 'si' : 'no';
+        }
+
+        return str($value ?? '')
+            ->lower()
+            ->ascii()
+            ->replace([' ', '-'], '_')
+            ->value();
+    };
+    $formatDetailValue = function (string $key, $value) use ($detailOptions, $formatValue, $normalizeSelectValue) {
+        $normalizedValue = $normalizeSelectValue($value);
+
+        foreach ($detailOptions[$key] ?? [] as $optionValue => $optionLabel) {
+            if (in_array($normalizedValue, [
+                $normalizeSelectValue($optionValue),
+                $normalizeSelectValue($optionLabel),
+            ], true)) {
+                return $optionLabel;
+            }
+        }
+
+        return $formatValue($value);
+    };
 @endphp
 
 @section('title', $development->name . ' | Biblia Inmobiliaria')
@@ -143,12 +210,20 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    @if (! empty($development->property_details))
+                    @if (! empty($detailFields))
                         <div class="row g-6">
-                            @foreach ($development->property_details as $key => $value)
+                            @foreach ($detailFields as $key)
+                                @php
+                                    $hasValue = array_key_exists($key, $development->property_details ?? [])
+                                        && $development->property_details[$key] !== ''
+                                        && $development->property_details[$key] !== null;
+                                    $value = $hasValue ? $development->property_details[$key] : null;
+                                @endphp
                                 <div class="col-md-6 col-xl-4">
                                     <div class="text-muted fw-semibold fs-7 mb-1">{{ $detailLabels[$key] ?? $formatValue($key) }}</div>
-                                    <div class="fw-bold text-gray-900">{{ $formatValue($value) }}</div>
+                                    <div @class(['fw-bold', 'text-gray-900' => $hasValue, 'text-muted' => ! $hasValue])>
+                                        {{ $hasValue ? $formatDetailValue($key, $value) : 'No capturado' }}
+                                    </div>
                                 </div>
                             @endforeach
                         </div>
