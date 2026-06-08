@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\Admin\AmenityController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DeveloperProfileController;
 use App\Http\Controllers\Admin\DevelopmentController;
@@ -78,6 +79,17 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::delete('roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
     Route::post('permisos', [PermissionController::class, 'store'])->name('permissions.store');
     Route::delete('permisos/{permission}', [PermissionController::class, 'destroy'])->name('permissions.destroy');
-    Route::get('perfil-desarrolladora', DeveloperProfileController::class)->name('developer-profile');
+    Route::prefix('catalogos')->name('catalogs.')->group(function () {
+        Route::get('amenidades', [AmenityController::class, 'index'])->name('amenities.index');
+        Route::post('amenidades', [AmenityController::class, 'store'])->name('amenities.store');
+        Route::patch('amenidades/{amenity}', [AmenityController::class, 'update'])->name('amenities.update');
+        Route::delete('amenidades/{amenity}', [AmenityController::class, 'destroy'])->name('amenities.destroy');
+    });
+    Route::get('perfil-desarrolladora', [DeveloperProfileController::class, 'index'])->name('developer-profile');
+    Route::get('perfil-desarrolladora/crear', [DeveloperProfileController::class, 'create'])->name('developer-profile.create');
+    Route::post('perfil-desarrolladora', [DeveloperProfileController::class, 'store'])->name('developer-profile.store');
+    Route::get('perfil-desarrolladora/{developerProfile}', [DeveloperProfileController::class, 'show'])->name('developer-profile.show');
+    Route::get('perfil-desarrolladora/{developerProfile}/editar', [DeveloperProfileController::class, 'edit'])->name('developer-profile.edit');
+    Route::match(['put', 'patch'], 'perfil-desarrolladora/{developerProfile}', [DeveloperProfileController::class, 'update'])->name('developer-profile.update');
     Route::get('configuraciones', SettingsController::class)->name('settings');
 });

@@ -81,7 +81,7 @@
                                             class="text-gray-900 text-hover-primary fw-bold">
                                             {{ $development->name }}
                                         </a>
-                                        <span class="text-muted">{{ $development->developer }}</span>
+                                        <span class="text-muted">{{ $development->developerName() }}</span>
                                     </div>
                                 </td>
                                 <td>

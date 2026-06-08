@@ -41,8 +41,27 @@
                     </a>
                 </div>
 
+                <div data-kt-menu-trigger="click" class="menu-item menu-accordion {{ request()->routeIs('admin.catalogs.*') ? 'show' : '' }}">
+                    <span class="menu-link {{ request()->routeIs('admin.catalogs.*') ? 'active' : '' }}">
+                        <span class="menu-icon"><i class="ki-outline ki-category fs-2"></i></span>
+                        <span class="menu-title">Catalogos</span>
+                        <span class="menu-arrow"></span>
+                    </span>
+                    <div class="menu-sub menu-sub-accordion">
+                        <div class="menu-item">
+                            <a class="menu-link {{ request()->routeIs('admin.catalogs.amenities.*') ? 'active' : '' }}"
+                                href="{{ route('admin.catalogs.amenities.index') }}">
+                                <span class="menu-bullet">
+                                    <span class="bullet bullet-dot"></span>
+                                </span>
+                                <span class="menu-title">Amenidades</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="menu-item">
-                    <a class="menu-link {{ request()->routeIs('admin.developer-profile') ? 'active' : '' }}"
+                    <a class="menu-link {{ request()->routeIs('admin.developer-profile*') ? 'active' : '' }}"
                         href="{{ route('admin.developer-profile') }}">
                         <span class="menu-icon"><i class="ki-outline ki-bank fs-2"></i></span>
                         <span class="menu-title">Perfil de desarrolladora</span>
