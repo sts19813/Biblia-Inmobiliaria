@@ -124,13 +124,27 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="card-toolbar">
-                            <span class="badge badge-light-primary">Link publico: archivos publicos</span>
+                        <div class="card-toolbar flex-wrap gap-3">
+                            <div class="position-relative">
+                                <i class="ki-outline ki-magnifier fs-3 position-absolute top-50 translate-middle-y ms-4 text-gray-500"></i>
+                                <input type="text"
+                                    class="form-control form-control-solid w-250px ps-12"
+                                    placeholder="Buscar archivo..."
+                                    data-document-files-search>
+                            </div>
+                            <select class="form-select form-select-solid w-200px" data-document-files-sort>
+                                <option value="date_desc">Mas recientes</option>
+                                <option value="date_asc">Mas antiguos</option>
+                                <option value="title_asc">Titulo A-Z</option>
+                                <option value="title_desc">Titulo Z-A</option>
+                                <option value="size_desc">Mayor tamano</option>
+                                <option value="size_asc">Menor tamano</option>
+                            </select>
                         </div>
                     </div>
                     <div class="card-body pt-0">
                         <div class="table-responsive">
-                            <table class="table align-middle table-row-dashed fs-6 gy-5">
+                            <table class="table align-middle table-row-dashed fs-6 gy-5" data-document-files-table>
                                 <thead>
                                     <tr class="text-start text-gray-500 fw-bold fs-7 text-uppercase gs-0">
                                         <th>Nombre</th>
@@ -143,7 +157,7 @@
                                     </tr>
                                 </thead>
                                 <tbody class="fw-semibold text-gray-600">
-                                    @forelse ($activeFolder->files as $file)
+                                    @foreach ($activeFolder->files as $file)
                                         <tr>
                                             <td>
                                                 <div class="d-flex align-items-center gap-3">
@@ -161,7 +175,7 @@
                                                 </div>
                                             </td>
                                             <td><span class="badge badge-light">{{ strtoupper($file->extension ?: 'file') }}</span></td>
-                                            <td>{{ $file->humanSize() }}</td>
+                                            <td data-order="{{ (int) $file->size_bytes }}">{{ $file->humanSize() }}</td>
                                             <td>
                                                 <form method="POST" action="{{ route('admin.developments.documents.files.visibility', [$development, $file]) }}">
                                                     @csrf
@@ -172,7 +186,9 @@
                                                 </form>
                                             </td>
                                             <td>{{ $file->uploader?->name ?? 'Sistema' }}</td>
-                                            <td>{{ $file->created_at?->format('d/m/Y H:i') ?? '-' }}</td>
+                                            <td data-order="{{ $file->created_at?->timestamp ?? 0 }}">
+                                                {{ $file->created_at?->format('d/m/Y H:i') ?? '-' }}
+                                            </td>
                                             <td class="text-end">
                                                 <button type="button"
                                                     class="btn btn-icon btn-light btn-active-light-primary btn-sm"
@@ -204,15 +220,7 @@
                                                 </form>
                                             </td>
                                         </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="7" class="text-center py-10">
-                                                <i class="ki-outline ki-folder fs-3x text-gray-400 mb-4"></i>
-                                                <div class="fw-bold text-gray-900 fs-4">Carpeta vacia</div>
-                                                <div class="text-muted fw-semibold">Carga archivos para esta categoria.</div>
-                                            </td>
-                                        </tr>
-                                    @endforelse
+                                    @endforeach
                                 </tbody>
                             </table>
                         </div>
@@ -333,6 +341,61 @@
             var uploadForm = document.querySelector('[data-document-upload-form]');
             var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
             var existingDocumentNames = @js($activeFolder ? $activeFolder->files->map(fn ($file) => strtolower($file->name . ($file->extension ? '.' . $file->extension : '')))->values() : []);
+            var filesTableElement = document.querySelector('[data-document-files-table]');
+            var filesSearchInput = document.querySelector('[data-document-files-search]');
+            var filesSortSelect = document.querySelector('[data-document-files-sort]');
+            var filesDataTable = null;
+
+            if (filesTableElement && window.jQuery && jQuery.fn.DataTable) {
+                filesDataTable = jQuery(filesTableElement).DataTable({
+                    order: [[5, 'desc']],
+                    pageLength: 10,
+                    lengthChange: false,
+                    dom: "<'table-responsive't><'row align-items-center mt-6'<'col-sm-12 col-md-5 text-muted fw-semibold'i><'col-sm-12 col-md-7 d-flex justify-content-md-end'p>>",
+                    language: {
+                        emptyTable: 'Esta carpeta no tiene archivos.',
+                        zeroRecords: 'No se encontraron archivos.',
+                        info: 'Mostrando _START_ a _END_ de _TOTAL_ archivos',
+                        infoEmpty: 'Sin archivos',
+                        infoFiltered: '(filtrado de _MAX_ archivos)',
+                        paginate: {
+                            first: 'Primero',
+                            last: 'Ultimo',
+                            next: 'Siguiente',
+                            previous: 'Anterior'
+                        }
+                    },
+                    columnDefs: [
+                        {
+                            targets: 6,
+                            orderable: false,
+                            searchable: false
+                        }
+                    ]
+                });
+
+                if (filesSearchInput) {
+                    filesSearchInput.addEventListener('input', function () {
+                        filesDataTable.search(this.value).draw();
+                    });
+                }
+
+                if (filesSortSelect) {
+                    filesSortSelect.addEventListener('change', function () {
+                        var sortMap = {
+                            title_asc: [0, 'asc'],
+                            title_desc: [0, 'desc'],
+                            date_desc: [5, 'desc'],
+                            date_asc: [5, 'asc'],
+                            size_desc: [2, 'desc'],
+                            size_asc: [2, 'asc']
+                        };
+                        var sort = sortMap[this.value] || sortMap.date_desc;
+
+                        filesDataTable.order([sort]).draw();
+                    });
+                }
+            }
 
             function showToast(icon, title) {
                 if (window.Swal) {
