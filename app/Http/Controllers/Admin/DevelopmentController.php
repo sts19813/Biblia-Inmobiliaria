@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Amenity;
 use App\Models\Development;
+use App\Models\DeveloperProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -105,7 +107,7 @@ class DevelopmentController extends Controller
     public function index()
     {
         return view('admin.developments.index', [
-            'developments' => Development::latest()->paginate(12),
+            'developments' => Development::with('developerProfile')->latest()->paginate(12),
             'propertyTypes' => self::PROPERTY_TYPES,
             'statuses' => self::STATUSES,
         ]);
@@ -117,6 +119,8 @@ class DevelopmentController extends Controller
             'development' => new Development(['property_type' => 'casa', 'status' => 'preventa']),
             'propertyTypes' => self::PROPERTY_TYPES,
             'statuses' => self::STATUSES,
+            'developerProfiles' => $this->developerProfiles(),
+            'amenitiesCatalog' => $this->amenitiesCatalog(),
         ]);
     }
 
@@ -124,7 +128,8 @@ class DevelopmentController extends Controller
     {
         $data = $this->validatedData($request);
         $data['description'] = $data['description'] ?? null;
-        $data['amenities'] = $this->linesToArray($data['amenities']);
+        $data['developer'] = $this->developerName($data['developer_profile_id'] ?? null);
+        $data['amenities'] = $this->amenitiesToArray($data['amenities'] ?? []);
         $data['property_details'] = $this->normalizeDetails(
             $data['property_type'],
             $data['property_details'] ?? []
@@ -148,6 +153,8 @@ class DevelopmentController extends Controller
 
     public function show(Development $development)
     {
+        $development->load('developerProfile');
+
         return view('admin.developments.show', [
             'development' => $development,
             'propertyTypes' => self::PROPERTY_TYPES,
@@ -163,6 +170,8 @@ class DevelopmentController extends Controller
             'development' => $development,
             'propertyTypes' => self::PROPERTY_TYPES,
             'statuses' => self::STATUSES,
+            'developerProfiles' => $this->developerProfiles(),
+            'amenitiesCatalog' => $this->amenitiesCatalog(),
         ]);
     }
 
@@ -170,7 +179,8 @@ class DevelopmentController extends Controller
     {
         $data = $this->validatedData($request);
         $data['description'] = $data['description'] ?? null;
-        $data['amenities'] = $this->linesToArray($data['amenities']);
+        $data['developer'] = $this->developerName($data['developer_profile_id'] ?? null);
+        $data['amenities'] = $this->amenitiesToArray($data['amenities'] ?? []);
         $data['property_details'] = $this->normalizeDetails(
             $data['property_type'],
             $data['property_details'] ?? []
@@ -197,7 +207,7 @@ class DevelopmentController extends Controller
     {
         $rules = [
             'name' => ['required', 'string', 'max:255'],
-            'developer' => ['required', 'string', 'max:255'],
+            'developer_profile_id' => ['nullable', 'exists:developer_profiles,id'],
             'property_type' => ['required', Rule::in(array_keys(self::PROPERTY_TYPES))],
             'city' => ['required', 'string', 'max:255'],
             'zone' => ['required', 'string', 'max:255'],
@@ -212,7 +222,8 @@ class DevelopmentController extends Controller
             'payment_methods' => ['required', 'string'],
             'delivery_date' => ['required', 'date'],
             'status' => ['required', Rule::in(array_keys(self::STATUSES))],
-            'amenities' => ['required', 'string'],
+            'amenities' => ['nullable', 'array'],
+            'amenities.*' => ['string', 'max:120'],
             'commission_percentage' => ['required', 'numeric', 'between:0,100'],
             'advisor_bonus' => ['nullable', 'numeric', 'min:0'],
             'active_promotions' => ['nullable', 'string'],
@@ -336,13 +347,33 @@ class DevelopmentController extends Controller
             ->all();
     }
 
-    private function linesToArray(string $value): array
+    private function amenitiesToArray(array $value): array
     {
-        return collect(preg_split('/[\r\n,]+/', $value))
+        return collect($value)
             ->map(fn (string $item) => trim($item))
             ->filter()
+            ->unique(fn (string $item) => str($item)->lower()->ascii()->value())
             ->values()
             ->all();
+    }
+
+    private function developerName(?int $developerProfileId): ?string
+    {
+        if (! $developerProfileId) {
+            return null;
+        }
+
+        return DeveloperProfile::find($developerProfileId)?->commercial_name;
+    }
+
+    private function developerProfiles()
+    {
+        return DeveloperProfile::orderBy('commercial_name')->get(['id', 'commercial_name', 'legal_name']);
+    }
+
+    private function amenitiesCatalog()
+    {
+        return Amenity::where('is_active', true)->orderBy('name')->pluck('name')->all();
     }
 
     private function deletePublicFile(?string $path): void

@@ -170,7 +170,7 @@
                                     {{ $statuses[$development->status] ?? $development->status }}
                                 </span>
                             </div>
-                            <div class="text-muted fw-semibold">{{ $development->developer }}</div>
+                            <div class="text-muted fw-semibold">{{ $development->developerName() }}</div>
                             <div class="d-flex flex-wrap gap-4 mt-4 text-gray-700">
                                 <span>
                                     <i class="ki-outline ki-geolocation fs-4 me-1"></i>
@@ -306,9 +306,11 @@
                         <div class="col-12">
                             <div class="text-muted fw-semibold fs-7 mb-2">Amenidades</div>
                             <div class="d-flex flex-wrap gap-2">
-                                @foreach ($development->amenities ?? [] as $amenity)
+                                @forelse ($development->amenities ?? [] as $amenity)
                                     <span class="badge badge-light">{{ $amenity }}</span>
-                                @endforeach
+                                @empty
+                                    <span class="text-muted fw-semibold">Sin amenidades capturadas.</span>
+                                @endforelse
                             </div>
                         </div>
                     </div>

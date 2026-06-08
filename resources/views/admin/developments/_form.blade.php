@@ -2,7 +2,11 @@
     $details = old('property_details', $development->property_details ?? []);
     $selectedType = old('property_type', $development->property_type ?: 'casa');
     $selectedStatus = old('status', $development->status ?: 'preventa');
-    $amenitiesText = old('amenities', implode(PHP_EOL, $development->amenities ?? []));
+    $selectedDeveloperProfile = old('developer_profile_id', $development->developer_profile_id);
+    $selectedAmenities = old('amenities', $development->amenities ?? []);
+    $selectedAmenities = is_array($selectedAmenities)
+        ? $selectedAmenities
+        : collect(preg_split('/[\r\n,]+/', (string) $selectedAmenities))->map(fn ($item) => trim($item))->filter()->values()->all();
     $detailValue = fn (string $key) => old('property_details.' . $key, $details[$key] ?? '');
     $normalizeSelectValue = function ($value) {
         if (is_bool($value)) {
@@ -224,11 +228,21 @@
                     </div>
 
                     <div class="col-md-6">
-                        <label class="required form-label">Desarrollador</label>
-                        <input type="text" name="developer" value="{{ old('developer', $development->developer) }}"
-                            class="form-control form-control-solid @error('developer') is-invalid @enderror"
-                            placeholder="Empresa o grupo constructor" required>
-                        @error('developer')
+                        <label class="form-label">Desarrollador</label>
+                        <select name="developer_profile_id"
+                            class="form-select form-select-solid @error('developer_profile_id') is-invalid @enderror"
+                            data-control="select2"
+                            data-placeholder="Seleccionar desarrolladora"
+                            data-allow-clear="true">
+                            <option value=""></option>
+                            @foreach ($developerProfiles as $developerProfile)
+                                <option value="{{ $developerProfile->id }}" @selected((string) $selectedDeveloperProfile === (string) $developerProfile->id)>
+                                    {{ $developerProfile->commercial_name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <div class="form-text">Opcional. Relaciona este desarrollo solo si la desarrolladora ya esta registrada.</div>
+                        @error('developer_profile_id')
                             <div class="invalid-feedback d-block">{{ $message }}</div>
                         @enderror
                     </div>
@@ -595,11 +609,24 @@
                         </div>
 
                         <div class="col-12">
-                            <label class="required form-label">Amenidades</label>
-                            <textarea name="amenities" rows="8"
-                                class="form-control form-control-solid @error('amenities') is-invalid @enderror"
-                                placeholder="Alberca&#10;Gimnasio&#10;Caseta de vigilancia" required>{{ $amenitiesText }}</textarea>
+                            <label class="form-label">Amenidades</label>
+                            <select name="amenities[]"
+                                class="form-select form-select-solid @error('amenities') is-invalid @enderror"
+                                data-development-amenities
+                                data-control="select2"
+                                data-placeholder="Seleccionar o escribir amenidades"
+                                multiple>
+                                @foreach (collect($amenitiesCatalog)->merge($selectedAmenities)->filter()->unique() as $amenity)
+                                    <option value="{{ $amenity }}" @selected(in_array($amenity, $selectedAmenities, true))>
+                                        {{ $amenity }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <div class="form-text">Puedes seleccionar del catalogo o escribir una nueva amenidad como tag.</div>
                             @error('amenities')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                            @error('amenities.*')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
@@ -647,6 +674,21 @@
             var sections = form.querySelectorAll('[data-development-section]');
             var typeInputs = form.querySelectorAll('input[name="property_type"]');
             var uploadZones = form.querySelectorAll('[data-upload-zone]');
+            var amenitiesSelect = form.querySelector('[data-development-amenities]');
+
+            if (window.jQuery && jQuery.fn.select2 && amenitiesSelect) {
+                jQuery(amenitiesSelect).select2({
+                    tags: true,
+                    width: '100%',
+                    tokenSeparators: [','],
+                    placeholder: amenitiesSelect.dataset.placeholder || 'Seleccionar amenidades',
+                    language: {
+                        noResults: function () {
+                            return 'Escribe para agregar una nueva amenidad';
+                        }
+                    }
+                });
+            }
 
             function setActiveType(type) {
                 sections.forEach(function (section) {

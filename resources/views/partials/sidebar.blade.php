@@ -42,6 +42,14 @@
                 </div>
 
                 <div class="menu-item">
+                    <a class="menu-link {{ request()->routeIs('admin.catalogs.*') ? 'active' : '' }}"
+                        href="{{ route('admin.catalogs.amenities.index') }}">
+                        <span class="menu-icon"><i class="ki-outline ki-category fs-2"></i></span>
+                        <span class="menu-title">Catalogos</span>
+                    </a>
+                </div>
+
+                <div class="menu-item">
                     <a class="menu-link {{ request()->routeIs('admin.developer-profile*') ? 'active' : '' }}"
                         href="{{ route('admin.developer-profile') }}">
                         <span class="menu-icon"><i class="ki-outline ki-bank fs-2"></i></span>

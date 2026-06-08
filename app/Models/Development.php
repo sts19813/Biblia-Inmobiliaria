@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -12,6 +13,7 @@ use Illuminate\Support\Str;
 #[Fillable([
     'name',
     'developer',
+    'developer_profile_id',
     'property_type',
     'city',
     'zone',
@@ -80,6 +82,16 @@ class Development extends Model
     public function documentFolders(): HasMany
     {
         return $this->hasMany(DevelopmentDocumentFolder::class)->orderBy('sort_order')->orderBy('name');
+    }
+
+    public function developerProfile(): BelongsTo
+    {
+        return $this->belongsTo(DeveloperProfile::class);
+    }
+
+    public function developerName(): string
+    {
+        return $this->developerProfile?->commercial_name ?: ($this->developer ?: 'Sin desarrolladora');
     }
 
     public function ensureDocumentShareToken(): string
