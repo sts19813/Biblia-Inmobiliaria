@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\Admin\AdvisorDevelopmentCatalogController;
 use App\Http\Controllers\Admin\AmenityController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DeveloperProfileController;
@@ -56,6 +57,7 @@ Route::get('mini-drive/{token}/archivo/{file}/descargar', [PublicDevelopmentDocu
 
 Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
+    Route::get('catalogo-desarrollos', [AdvisorDevelopmentCatalogController::class, 'index'])->name('advisor-catalog.index');
     Route::get('desarrollos', [DevelopmentController::class, 'index'])->name('developments.index');
     Route::get('desarrollos/crear', [DevelopmentController::class, 'create'])->name('developments.create');
     Route::post('desarrollos', [DevelopmentController::class, 'store'])->name('developments.store');
