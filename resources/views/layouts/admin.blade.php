@@ -33,9 +33,17 @@
     @stack('styles')
 </head>
 
+@php
+    $isSidebarMinimized = request()->cookie('sidebar_minimize_state', 'on') === 'on';
+@endphp
+
 <body id="kt_app_body" data-kt-app-header-fixed="true" data-kt-app-header-fixed-mobile="true"
     data-kt-app-sidebar-enabled="true" data-kt-app-sidebar-fixed="true" data-kt-app-sidebar-hoverable="true"
-    data-kt-app-sidebar-push-toolbar="true" data-kt-app-sidebar-push-footer="true" class="app-default">
+    data-kt-app-sidebar-push-toolbar="true" data-kt-app-sidebar-push-footer="true"
+    @if ($isSidebarMinimized)
+        data-kt-app-sidebar-minimize="on"
+    @endif
+    class="app-default">
 
     <script>
         var defaultThemeMode = "light";
