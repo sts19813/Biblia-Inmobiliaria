@@ -8,8 +8,12 @@ use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DeveloperProfileController;
 use App\Http\Controllers\Admin\DevelopmentController;
+use App\Http\Controllers\Admin\DevelopmentDocumentController;
+use App\Http\Controllers\Admin\PermissionController;
+use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\PublicDevelopmentDocumentController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -44,6 +48,11 @@ Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
     ->middleware('auth')
     ->name('logout');
 
+Route::get('mini-drive/{token}', [PublicDevelopmentDocumentController::class, 'index'])->name('public.documents.index');
+Route::get('mini-drive/{token}/carpetas/{folder}', [PublicDevelopmentDocumentController::class, 'folder'])->name('public.documents.folder');
+Route::get('mini-drive/{token}/archivo/{file}/ver', [PublicDevelopmentDocumentController::class, 'viewFile'])->name('public.documents.files.view');
+Route::get('mini-drive/{token}/archivo/{file}/descargar', [PublicDevelopmentDocumentController::class, 'download'])->name('public.documents.files.download');
+
 Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
     Route::get('desarrollos', [DevelopmentController::class, 'index'])->name('developments.index');
@@ -52,10 +61,23 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('desarrollos/{development}', [DevelopmentController::class, 'show'])->name('developments.show');
     Route::get('desarrollos/{development}/editar', [DevelopmentController::class, 'edit'])->name('developments.edit');
     Route::match(['put', 'patch'], 'desarrollos/{development}', [DevelopmentController::class, 'update'])->name('developments.update');
+    Route::get('desarrollos/{development}/documentos', [DevelopmentDocumentController::class, 'index'])->name('developments.documents.index');
+    Route::post('desarrollos/{development}/documentos/carpetas', [DevelopmentDocumentController::class, 'storeFolder'])->name('developments.documents.folders.store');
+    Route::post('desarrollos/{development}/documentos/carpetas/{folder}/archivos', [DevelopmentDocumentController::class, 'upload'])->name('developments.documents.files.upload');
+    Route::patch('desarrollos/{development}/documentos/archivos/{file}/renombrar', [DevelopmentDocumentController::class, 'renameFile'])->name('developments.documents.files.rename');
+    Route::patch('desarrollos/{development}/documentos/archivos/{file}/destacado', [DevelopmentDocumentController::class, 'toggleFeatured'])->name('developments.documents.files.featured');
+    Route::patch('desarrollos/{development}/documentos/archivos/{file}/visibilidad', [DevelopmentDocumentController::class, 'toggleVisibility'])->name('developments.documents.files.visibility');
+    Route::delete('desarrollos/{development}/documentos/archivos/{file}', [DevelopmentDocumentController::class, 'destroyFile'])->name('developments.documents.files.destroy');
+    Route::post('desarrollos/{development}/documentos/carpetas/{folder}/permisos', [DevelopmentDocumentController::class, 'updatePermissions'])->name('developments.documents.permissions.update');
     Route::resource('usuarios', UserController::class)
         ->except(['show'])
         ->names('users')
         ->parameters(['usuarios' => 'user']);
+    Route::post('roles', [RoleController::class, 'store'])->name('roles.store');
+    Route::patch('roles/{role}', [RoleController::class, 'update'])->name('roles.update');
+    Route::delete('roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
+    Route::post('permisos', [PermissionController::class, 'store'])->name('permissions.store');
+    Route::delete('permisos/{permission}', [PermissionController::class, 'destroy'])->name('permissions.destroy');
     Route::get('perfil-desarrolladora', DeveloperProfileController::class)->name('developer-profile');
     Route::get('configuraciones', SettingsController::class)->name('settings');
 });

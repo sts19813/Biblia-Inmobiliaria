@@ -36,9 +36,13 @@ class GoogleAuthController extends Controller
 
         if (! $user->exists) {
             $user->password = Str::random(32);
+            $user->role = 'asesor';
         }
 
         $user->save();
+        if ($user->roles()->count() === 0) {
+            $user->syncRoles([$user->role ?: 'asesor']);
+        }
 
         Auth::login($user, true);
 

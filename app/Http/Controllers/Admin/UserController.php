@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
@@ -20,8 +22,10 @@ class UserController extends Controller
     public function index()
     {
         return view('admin.users.index', [
-            'users' => User::latest()->paginate(12),
-            'roles' => self::ROLES,
+            'users' => User::with('roles', 'permissions')->latest()->paginate(12),
+            'roles' => Role::with('permissions')->orderBy('name')->get(),
+            'permissions' => Permission::orderBy('name')->get(),
+            'roleLabels' => self::ROLES,
         ]);
     }
 
@@ -29,7 +33,9 @@ class UserController extends Controller
     {
         return view('admin.users.create', [
             'user' => new User(['role' => 'asesor']),
-            'roles' => self::ROLES,
+            'roles' => Role::orderBy('name')->get(),
+            'permissions' => Permission::orderBy('name')->get(),
+            'roleLabels' => self::ROLES,
         ]);
     }
 
@@ -41,7 +47,13 @@ class UserController extends Controller
             $data['profile_photo_path'] = $request->file('profile_photo')->store('profile-photos', 'public');
         }
 
-        User::create($data);
+        $roleName = $data['role'];
+        $permissions = $data['permissions'] ?? [];
+        unset($data['permissions']);
+
+        $user = User::create($data);
+        $user->syncRoles([$roleName]);
+        $user->syncPermissions($permissions);
 
         return redirect()
             ->route('admin.users.index')
@@ -52,7 +64,9 @@ class UserController extends Controller
     {
         return view('admin.users.edit', [
             'user' => $user,
-            'roles' => self::ROLES,
+            'roles' => Role::orderBy('name')->get(),
+            'permissions' => Permission::orderBy('name')->get(),
+            'roleLabels' => self::ROLES,
         ]);
     }
 
@@ -68,7 +82,13 @@ class UserController extends Controller
             $data['profile_photo_path'] = $request->file('profile_photo')->store('profile-photos', 'public');
         }
 
+        $roleName = $data['role'];
+        $permissions = $data['permissions'] ?? [];
+        unset($data['permissions']);
+
         $user->update($data);
+        $user->syncRoles([$roleName]);
+        $user->syncPermissions($permissions);
 
         return redirect()
             ->route('admin.users.index')
@@ -106,7 +126,9 @@ class UserController extends Controller
             'office_phone' => ['nullable', 'string', 'max:30'],
             'work_zone' => ['required', 'string', 'max:255'],
             'company' => ['nullable', 'string', 'max:255'],
-            'role' => ['required', Rule::in(array_keys(self::ROLES))],
+            'role' => ['required', Rule::exists('roles', 'name')],
+            'permissions' => ['nullable', 'array'],
+            'permissions.*' => ['string', Rule::exists('permissions', 'name')],
             'ampi_certificate' => ['nullable', 'string', 'max:255'],
             'profile_photo' => ['nullable', 'image', 'max:2048'],
             'password' => [$user ? 'nullable' : 'required', 'confirmed', Password::defaults()],
