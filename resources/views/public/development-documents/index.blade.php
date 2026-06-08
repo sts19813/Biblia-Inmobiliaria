@@ -57,12 +57,24 @@
         .search-result-row:last-child {
             border-bottom: 0 !important;
         }
+
+        .contact-card {
+            border: 1px solid rgba(15, 23, 42, .06);
+        }
+
+        .contact-logo {
+            width: 74px;
+            height: 74px;
+            object-fit: contain;
+        }
     </style>
 </head>
 <body>
     @php
         $iconClasses = ['bg-primary', 'bg-success', 'bg-info', 'bg-warning', 'bg-danger', 'bg-dark'];
         $publicFileCount = $folders->sum(fn ($folder) => $folder->files->count());
+        $developerProfiles = collect([$development->developerProfile])->filter();
+        $masterBroker = $development->created_by ? \App\Models\User::find($development->created_by) : null;
     @endphp
 
     <section class="public-hero d-flex align-items-center" style="background-image: url('{{ $development->displayImageUrl() ?: asset('/metronic/assets/media/misc/bg-1.jpg') }}');">
@@ -192,6 +204,93 @@
                 </div>
             @endforeach
         </section>
+
+         @if ($developerProfiles->isNotEmpty())
+            <section class="contact-card card card-flush shadow-sm mb-10 mt-10">
+                <div class="card-body p-8 p-lg-10">
+                    <h2 class="fw-bold text-gray-900 mb-8">Informacion de contacto</h2>
+
+                    @foreach ($developerProfiles as $developerProfile)
+                        @php
+                            $developerLocation = collect([
+                                $developerProfile->city,
+                                $developerProfile->state,
+                                $developerProfile->country,
+                            ])->filter()->join(', ');
+                            $whatsappDigits = preg_replace('/\D+/', '', (string) $developerProfile->whatsapp);
+                        @endphp
+
+                        <div class="row g-8 align-items-start @if (! $loop->last) border-bottom pb-8 mb-8 @endif">
+                            <div class="col-lg-6">
+                                <div class="d-flex gap-5 align-items-start">
+                                    <div class="symbol symbol-75px flex-shrink-0">
+                                        <div class="symbol-label bg-light-primary shadow-sm">
+                                            @if ($developerProfile->logoUrl())
+                                                <img src="{{ $developerProfile->logoUrl() }}" alt="{{ $developerProfile->commercial_name }}" class="contact-logo p-2">
+                                            @else
+                                                <i class="ki-outline ki-bank fs-2x text-primary"></i>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="text-muted fw-bold fs-5 mb-2">Desarrolladora</div>
+                                        <div class="fw-bold fs-3 text-gray-900">{{ $developerProfile->commercial_name }}</div>
+                                        @if ($developerProfile->legal_name)
+                                            <div class="text-gray-600 fw-semibold mt-1">{{ $developerProfile->legal_name }}</div>
+                                        @endif
+                                        @if ($developerLocation)
+                                            <div class="text-gray-600 fw-semibold mt-4">
+                                                <i class="ki-outline ki-geolocation fs-4 me-2 text-danger"></i>
+                                                {{ $developerLocation }}
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                @if ($masterBroker)
+                                    <div class="mt-10">
+                                        <div class="text-muted fw-bold fs-5 mb-2">Master Broker</div>
+                                        <div class="fw-bold fs-4 text-gray-900">{{ $masterBroker->name }}</div>
+                                        <div class="text-gray-700 fw-semibold">{{ $masterBroker->email }}</div>
+                                    </div>
+                                @endif
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="row g-6">
+                                    <div class="col-sm-6">
+                                        <div class="text-muted fw-bold fs-5 mb-2">Contacto</div>
+                                        <div class="fw-bold fs-4 text-gray-900">{{ $developerProfile->corporate_email ?: 'Sin email capturado' }}</div>
+                                        <div class="fw-bold fs-4 text-gray-900 mt-2">{{ $developerProfile->phone ?: 'Sin telefono capturado' }}</div>
+                                    </div>
+
+                                    <div class="col-sm-6">
+                                        <div class="text-muted fw-bold fs-5 mb-2">WhatsApp</div>
+                                        @if ($whatsappDigits)
+                                            <a href="https://wa.me/{{ $whatsappDigits }}" target="_blank" rel="noopener" class="btn btn-success btn-lg">
+                                                <i class="ki-outline ki-whatsapp fs-2"></i>
+                                                Contactar
+                                            </a>
+                                        @else
+                                            <div class="text-gray-700 fw-semibold">Sin WhatsApp capturado</div>
+                                        @endif
+                                    </div>
+
+                                    @if ($developerProfile->website)
+                                        <div class="col-12">
+                                            <div class="text-muted fw-bold fs-5 mb-2">Sitio web</div>
+                                            <a href="{{ $developerProfile->website }}" target="_blank" rel="noopener" class="fw-bold fs-5 text-primary text-hover-primary">
+                                                {{ $developerProfile->website }}
+                                            </a>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </section>
+        @endif
 
         <section class="text-center py-16 d-none" data-folder-empty>
             <i class="ki-outline ki-folder fs-4x text-gray-400 mb-5"></i>
