@@ -65,6 +65,7 @@ class DevelopmentDocumentController extends Controller
             'files' => ['required', 'array'],
             'files.*' => ['file', 'max:51200'],
             'visibility' => ['required', 'in:public,private'],
+            'replace_existing' => ['nullable', 'boolean'],
         ], [
             'files.required' => 'Selecciona al menos un archivo para cargar.',
             'files.array' => 'La carga debe incluir una lista de archivos.',
@@ -75,10 +76,35 @@ class DevelopmentDocumentController extends Controller
         ]);
 
         $uploadedFiles = collect();
+        $replaceExisting = (bool) ($data['replace_existing'] ?? false);
 
         foreach ($data['files'] as $file) {
             $originalName = $file->getClientOriginalName();
-            $extension = $file->getClientOriginalExtension();
+            $name = pathinfo($originalName, PATHINFO_FILENAME);
+            $extension = strtolower($file->getClientOriginalExtension());
+            $existingFile = $folder->files()
+                ->whereRaw('LOWER(name) = ?', [Str::lower($name)])
+                ->whereRaw('LOWER(extension) = ?', [Str::lower($extension)])
+                ->first();
+
+            if ($existingFile && ! $replaceExisting) {
+                $message = 'Ya existe un archivo con el mismo nombre y extension: ' . $existingFile->original_name . '.';
+
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'message' => $message,
+                        'duplicate' => true,
+                    ], 409);
+                }
+
+                return back()->withErrors(['files' => $message]);
+            }
+
+            if ($existingFile && $replaceExisting) {
+                Storage::disk($existingFile->disk)->delete($existingFile->path);
+                $existingFile->delete();
+            }
+
             $storedName = Str::uuid() . ($extension ? '.' . $extension : '');
             $path = $file->storeAs(
                 'development-documents/' . $development->id . '/' . $folder->id,
@@ -88,12 +114,12 @@ class DevelopmentDocumentController extends Controller
 
             $uploadedFiles->push($folder->files()->create([
                 'uploaded_by' => $request->user()->id,
-                'name' => pathinfo($originalName, PATHINFO_FILENAME),
+                'name' => $name,
                 'original_name' => $originalName,
                 'path' => $path,
                 'disk' => 'public',
                 'mime_type' => $file->getClientMimeType(),
-                'extension' => strtolower($extension),
+                'extension' => $extension,
                 'size_bytes' => $file->getSize(),
                 'visibility' => $data['visibility'],
             ]));

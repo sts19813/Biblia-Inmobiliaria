@@ -332,6 +332,7 @@
         document.addEventListener('DOMContentLoaded', function () {
             var uploadForm = document.querySelector('[data-document-upload-form]');
             var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            var existingDocumentNames = @js($activeFolder ? $activeFolder->files->map(fn ($file) => strtolower($file->name . ($file->extension ? '.' . $file->extension : '')))->values() : []);
 
             function showToast(icon, title) {
                 if (window.Swal) {
@@ -393,6 +394,7 @@
             var finishedUploads = 0;
             var successfulUploads = 0;
             var failedUploads = 0;
+            var cancelledUploads = 0;
             var firstUploadError = '';
 
             function formatBytes(bytes) {
@@ -447,20 +449,61 @@
                 }
             }
 
-            function finishUpload(item, ok, message) {
+            function canonicalFileName(fileName) {
+                return (fileName || '').trim().toLowerCase();
+            }
+
+            function fileExists(file) {
+                return existingDocumentNames.indexOf(canonicalFileName(file.name)) !== -1;
+            }
+
+            function rememberUploadedFile(file) {
+                var canonicalName = canonicalFileName(file.name);
+
+                if (existingDocumentNames.indexOf(canonicalName) === -1) {
+                    existingDocumentNames.push(canonicalName);
+                }
+            }
+
+            function confirmReplace(file) {
+                var message = 'Ya existe un archivo con el mismo nombre y extension: ' + file.name + '.';
+
+                if (window.Swal) {
+                    return Swal.fire({
+                        title: 'Archivo duplicado',
+                        text: message,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Reemplazar',
+                        cancelButtonText: 'Cancelar',
+                        buttonsStyling: false,
+                        customClass: {
+                            confirmButton: 'btn btn-primary',
+                            cancelButton: 'btn btn-light'
+                        }
+                    }).then(function (result) {
+                        return result.isConfirmed;
+                    });
+                }
+
+                return Promise.resolve(window.confirm(message + ' Deseas reemplazarlo?'));
+            }
+
+            function finishUpload(item, ok, message, statusText, statusClass, isCancelled) {
                 finishedUploads++;
                 successfulUploads += ok ? 1 : 0;
-                failedUploads += ok ? 0 : 1;
+                cancelledUploads += isCancelled ? 1 : 0;
+                failedUploads += !ok && !isCancelled ? 1 : 0;
 
-                if (!ok && message && !firstUploadError) {
+                if (!ok && !isCancelled && message && !firstUploadError) {
                     firstUploadError = message;
                 }
 
                 setProgress(
                     item,
                     100,
-                    ok ? 'Cargado' : 'Error',
-                    ok ? 'badge-light-success' : 'badge-light-danger'
+                    statusText || (ok ? 'Cargado' : 'Error'),
+                    statusClass || (ok ? 'badge-light-success' : 'badge-light-danger')
                 );
 
                 if (!ok && message) {
@@ -478,8 +521,8 @@
                             ? 'Archivo cargado correctamente.'
                             : successfulUploads + ' archivos cargados correctamente.';
 
-                        if (failedUploads > 0) {
-                            toastTitle += ' ' + failedUploads + ' no se pudieron cargar.';
+                        if (failedUploads > 0 || cancelledUploads > 0) {
+                            toastTitle += ' ' + (failedUploads + cancelledUploads) + ' no se cargaron.';
                         }
 
                         summary.textContent = 'Carga finalizada. Actualizando listado...';
@@ -491,6 +534,11 @@
                         window.setTimeout(function () {
                             window.location.reload();
                         }, 700);
+                    } else if (cancelledUploads > 0 && failedUploads === 0) {
+                        summary.textContent = 'Carga cancelada.';
+                        showToast('warning', cancelledUploads === 1
+                            ? 'Carga cancelada.'
+                            : 'Cargas canceladas.');
                     } else {
                         summary.textContent = 'No se cargaron archivos. Revisa los errores e intenta de nuevo.';
                         showToast('error', failedUploads === 1 && firstUploadError
@@ -547,7 +595,7 @@
                     : 'No se pudo cargar el archivo.';
             }
 
-            function uploadSingleFile(file) {
+            function uploadSingleFile(file, replaceExisting) {
                 var item = createProgressItem(file);
 
                 if (file.size > maxUploadSize) {
@@ -560,6 +608,10 @@
 
                 formData.append('files[]', file);
                 formData.append('visibility', 'public');
+
+                if (replaceExisting) {
+                    formData.append('replace_existing', '1');
+                }
 
                 request.open('POST', uploadUrl, true);
                 request.setRequestHeader('X-CSRF-TOKEN', csrfToken);
@@ -577,6 +629,10 @@
                 request.addEventListener('load', function () {
                     var ok = request.status >= 200 && request.status < 300;
                     var message = ok ? '' : extractUploadError(request);
+
+                    if (ok) {
+                        rememberUploadedFile(file);
+                    }
 
                     finishUpload(item, ok, message);
                 });
@@ -600,6 +656,7 @@
                     finishedUploads = 0;
                     successfulUploads = 0;
                     failedUploads = 0;
+                    cancelledUploads = 0;
                     firstUploadError = '';
                     progressList.innerHTML = '';
                 }
@@ -607,7 +664,29 @@
                 activeUploads += files.length;
                 summary.textContent = 'Cargando ' + activeUploads + ' archivo(s)...';
 
-                files.forEach(uploadSingleFile);
+                files.forEach(function (file) {
+                    if (!fileExists(file)) {
+                        uploadSingleFile(file, false);
+                        return;
+                    }
+
+                    confirmReplace(file).then(function (replaceConfirmed) {
+                        if (replaceConfirmed) {
+                            uploadSingleFile(file, true);
+                            return;
+                        }
+
+                        var item = createProgressItem(file);
+                        finishUpload(
+                            item,
+                            false,
+                            'Carga cancelada. Ya existe un archivo con el mismo nombre y extension.',
+                            'Cancelado',
+                            'badge-light-warning',
+                            true
+                        );
+                    });
+                });
                 input.value = '';
             }
 
