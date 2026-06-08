@@ -24,7 +24,7 @@
             content: "";
             position: absolute;
             inset: 0;
-            background: linear-gradient(90deg, rgba(47, 35, 155, .9), rgba(99, 75, 255, .72));
+            background: linear-gradient(90deg, rgb(24 24 24 / 31%), rgb(99 75 255 / 0%));
         }
 
         .public-hero-content {
