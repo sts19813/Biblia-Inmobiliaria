@@ -42,7 +42,7 @@
                 </div>
 
                 <div class="menu-item">
-                    <a class="menu-link {{ request()->routeIs('admin.developer-profile') ? 'active' : '' }}"
+                    <a class="menu-link {{ request()->routeIs('admin.developer-profile*') ? 'active' : '' }}"
                         href="{{ route('admin.developer-profile') }}">
                         <span class="menu-icon"><i class="ki-outline ki-bank fs-2"></i></span>
                         <span class="menu-title">Perfil de desarrolladora</span>

@@ -78,6 +78,11 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::delete('roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
     Route::post('permisos', [PermissionController::class, 'store'])->name('permissions.store');
     Route::delete('permisos/{permission}', [PermissionController::class, 'destroy'])->name('permissions.destroy');
-    Route::get('perfil-desarrolladora', DeveloperProfileController::class)->name('developer-profile');
+    Route::get('perfil-desarrolladora', [DeveloperProfileController::class, 'index'])->name('developer-profile');
+    Route::get('perfil-desarrolladora/crear', [DeveloperProfileController::class, 'create'])->name('developer-profile.create');
+    Route::post('perfil-desarrolladora', [DeveloperProfileController::class, 'store'])->name('developer-profile.store');
+    Route::get('perfil-desarrolladora/{developerProfile}', [DeveloperProfileController::class, 'show'])->name('developer-profile.show');
+    Route::get('perfil-desarrolladora/{developerProfile}/editar', [DeveloperProfileController::class, 'edit'])->name('developer-profile.edit');
+    Route::match(['put', 'patch'], 'perfil-desarrolladora/{developerProfile}', [DeveloperProfileController::class, 'update'])->name('developer-profile.update');
     Route::get('configuraciones', SettingsController::class)->name('settings');
 });
