@@ -39,7 +39,7 @@
             <div class="table-responsive">
                 <table class="table align-middle table-row-dashed fs-6 gy-5" data-amenity-table>
                     <thead>
-                        <tr class="text-start text-gray-500 fw-bold fs-7 text-uppercase gs-0">
+                        <tr class="text-start text-gray-700 fw-bold fs-7 text-uppercase gs-0">
                             <th>Amenidad</th>
                             <th>Icono</th>
                             <th>Estado</th>

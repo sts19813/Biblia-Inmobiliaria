@@ -59,6 +59,17 @@
             width: 100% !important;
         }
 
+        .table-responsive thead{
+            background: #f8f8f8;
+        }
+
+         .table-responsive thead tr th:first-child {
+            padding-left: 10px !important;
+        }
+
+        .table-responsive thead tr th:last-child {
+            padding-right: 10px !important;
+        }
         .app-sidebar-menu-primary.menu>.menu-item>.menu-link .menu-title {
             color: #d7d7d7 !important;
         }
