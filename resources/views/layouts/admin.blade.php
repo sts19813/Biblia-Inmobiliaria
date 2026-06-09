@@ -25,6 +25,7 @@
             --admin-sidebar-mini-width: 76px;
             --admin-sidebar-text: rgba(210, 220, 243, .82);
             --admin-sidebar-text-active: #ffffff;
+            --admin-sidebar-width: 300px !important;
         }
 
         html,
@@ -54,6 +55,13 @@
             min-height: 100vh;
         }
 
+        .app-main{
+            width: 100% !important;
+        }
+
+        .app-sidebar-menu-primary.menu>.menu-item>.menu-link .menu-title {
+            color: #d7d7d7 !important;
+        }
         .app-sidebar {
             position: fixed;
             inset: 0 auto 0 0;
@@ -328,19 +336,32 @@
         }
 
         .app-container {
-            width: 100%;
-            max-width: none;
+            width: 100% !important;
+            max-width: 100% !important;
             min-width: 0;
             padding-left: 20px;
             padding-right: 20px;
         }
 
         #kt_app_content_container {
-            width: 100%;
+            width: 100% !important;
+            max-width: 100% !important;
             min-width: 0;
             overflow-x: auto;
             overflow-y: visible;
             padding-bottom: 8px;
+        }
+
+        #kt_app_toolbar_container,
+        #kt_app_content_container,
+        .app-footer .app-container {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+
+        #kt_app_content_container > .card,
+        #kt_app_content_container > form.card {
+            width: 100%;
         }
 
         .card {
@@ -400,6 +421,12 @@
         [data-kt-app-sidebar-minimize="on"] .sidebar-user-menu-trigger {
             width: 44px;
             height: 44px;
+        }
+
+        @media (min-width: 992px) {
+            [data-kt-app-sidebar-fixed=true] .app-wrapper {
+                margin-left: 30px !important;
+            }
         }
 
         @media (max-width: 991.98px) {
@@ -486,8 +513,7 @@
                             </div>
                         @endif
 
-                        <div id="kt_app_content" class="app-content">
-                            <div id="kt_app_content_container" class="app-container container-fluid">
+                           
                                 @if (session('status'))
                                     <div class="alert alert-success d-flex align-items-center mb-6">
                                         <i class="ki-outline ki-check-circle fs-2hx text-success me-4"></i>
@@ -507,8 +533,6 @@
                                 @endif
 
                                 @yield('content')
-                            </div>
-                        </div>
 
                         @include('partials.footer')
                     </div>

@@ -58,7 +58,7 @@
 @section('content')
     <form id="advisor_catalog_filters" method="GET" action="{{ route('admin.advisor-catalog.index') }}">
         <div class="row g-6">
-            <div class="col-xl-3 col-xxl-2">
+            <div class="col-xl-3 col-xxl-3">
                 <div class="card card-flush position-xl-sticky advisor-filter-card">
                     <div class="card-header align-items-center">
                         <div class="card-title">
@@ -217,7 +217,7 @@
                 </div>
             </div>
 
-            <div class="col-xl-9 col-xxl-10">
+            <div class="col-xl-9 col-xxl-19">
                 <div class="card card-flush">
                     <div class="card-header align-items-center py-5 gap-3">
                         <div class="card-title">

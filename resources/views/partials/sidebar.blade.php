@@ -121,7 +121,8 @@
                     <div class="sidebar-user-menu-trigger symbol symbol-circle"
                         data-kt-menu-trigger="{default: 'click', lg: 'click'}"
                         data-kt-menu-attach="body"
-                        data-kt-menu-placement="top-start">
+                        data-kt-menu-placement="left-end"
+                        data-kt-menu-offset="12px, 0">
                         @if ($user->profile_photo_path || $user->google_avatar_url)
                             <img src="{{ $user->avatarUrl() }}" alt="{{ $user->name }}" class="w-100 h-100 rounded-circle" style="object-fit: cover;">
                         @else
@@ -139,7 +140,8 @@
                             class="sidebar-user-action"
                             data-kt-menu-trigger="{default: 'click', lg: 'click'}"
                             data-kt-menu-attach="body"
-                            data-kt-menu-placement="top-end"
+                            data-kt-menu-placement="right-end"
+                            data-kt-menu-offset="12px, 0"
                             aria-label="Opciones">
                             <i class="ki-outline ki-setting-4 fs-5"></i>
                         </button>
