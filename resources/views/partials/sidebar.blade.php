@@ -54,6 +54,9 @@
                             <span class="menu-icon"><i class="ki-outline ki-chart-line fs-2"></i></span>
                             <span class="menu-title">Dashboard</span>
                         </a>
+                        <div class="sidebar-hover-card">
+                            <a href="{{ route('admin.dashboard') }}" class="sidebar-hover-title">Dashboard</a>
+                        </div>
                     </div>
 
                     <div class="menu-item">
@@ -62,6 +65,9 @@
                             <span class="menu-icon"><i class="ki-outline ki-magnifier fs-2"></i></span>
                             <span class="menu-title">Catalogo de desarrollos</span>
                         </a>
+                        <div class="sidebar-hover-card">
+                            <a href="{{ route('admin.advisor-catalog.index') }}" class="sidebar-hover-title">Catalogo de desarrollos</a>
+                        </div>
                     </div>
 
                     <div class="menu-item">
@@ -70,6 +76,9 @@
                             <span class="menu-icon"><i class="ki-outline ki-switch fs-2"></i></span>
                             <span class="menu-title">Comparador</span>
                         </a>
+                        <div class="sidebar-hover-card">
+                            <a href="{{ route('admin.development-comparison.index') }}" class="sidebar-hover-title">Comparador</a>
+                        </div>
                     </div>
 
                     <div class="menu-item">
@@ -78,6 +87,9 @@
                             <span class="menu-icon"><i class="ki-outline ki-home-2 fs-2"></i></span>
                             <span class="menu-title">Desarrollos</span>
                         </a>
+                        <div class="sidebar-hover-card">
+                            <a href="{{ route('admin.developments.index') }}" class="sidebar-hover-title">Desarrollos</a>
+                        </div>
                     </div>
 
                     <div class="menu-item">
@@ -86,6 +98,9 @@
                             <span class="menu-icon"><i class="ki-outline ki-people fs-2"></i></span>
                             <span class="menu-title">Master Brokers / Usuarios</span>
                         </a>
+                        <div class="sidebar-hover-card">
+                            <a href="{{ route('admin.users.index') }}" class="sidebar-hover-title">Master Brokers / Usuarios</a>
+                        </div>
                     </div>
 
                     <div data-kt-menu-trigger="click"
@@ -104,6 +119,13 @@
                                 </a>
                             </div>
                         </div>
+                        <div class="sidebar-hover-card">
+                            <div class="sidebar-hover-title">Catalogos</div>
+                            <a href="{{ route('admin.catalogs.amenities.index') }}"
+                                class="sidebar-hover-link {{ request()->routeIs('admin.catalogs.amenities.*') ? 'active' : '' }}">
+                                Amenidades
+                            </a>
+                        </div>
                     </div>
 
                     <div class="menu-item">
@@ -112,6 +134,9 @@
                             <span class="menu-icon"><i class="ki-outline ki-bank fs-2"></i></span>
                             <span class="menu-title">Perfil de desarrolladora</span>
                         </a>
+                        <div class="sidebar-hover-card">
+                            <a href="{{ route('admin.developer-profile') }}" class="sidebar-hover-title">Perfil de desarrolladora</a>
+                        </div>
                     </div>
 
                     <div class="menu-item">
@@ -120,6 +145,9 @@
                             <span class="menu-icon"><i class="ki-outline ki-setting-3 fs-2"></i></span>
                             <span class="menu-title">Configuraciones</span>
                         </a>
+                        <div class="sidebar-hover-card">
+                            <a href="{{ route('admin.settings') }}" class="sidebar-hover-title">Configuraciones</a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -129,8 +157,8 @@
                     <div class="sidebar-user-menu-trigger symbol symbol-circle"
                         data-kt-menu-trigger="{default: 'click', lg: 'click'}"
                         data-kt-menu-attach="body"
-                        data-kt-menu-placement="left-end"
-                        data-kt-menu-offset="12px, 0">
+                        data-kt-menu-placement="right-end"
+                        data-kt-menu-offset="18px, 0">
                         @if ($user->profile_photo_path || $user->google_avatar_url)
                             <img src="{{ $user->avatarUrl() }}" alt="{{ $user->name }}" class="w-100 h-100 rounded-circle" style="object-fit: cover;">
                         @else
@@ -231,6 +259,30 @@
                                 Cerrar sesion
                             </a>
                         </div>
+                    </div>
+
+                    <div class="sidebar-user-hover-card">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div class="symbol symbol-45px">
+                                @if ($user->profile_photo_path || $user->google_avatar_url)
+                                    <img src="{{ $user->avatarUrl() }}" alt="{{ $user->name }}" class="w-100 h-100 rounded-circle" style="object-fit: cover;">
+                                @else
+                                    <div class="symbol-label bg-primary text-white fw-bold fs-5">{{ $user->initials() }}</div>
+                                @endif
+                            </div>
+                            <div class="min-w-0">
+                                <div class="fw-bold text-gray-900 text-truncate">{{ $user->name }}</div>
+                                <div class="text-muted fs-8 text-truncate">{{ $user->email }}</div>
+                            </div>
+                        </div>
+                        <a href="{{ route('admin.users.edit', $user) }}" class="sidebar-hover-link">Mi perfil</a>
+                        <button type="button" class="sidebar-hover-link sidebar-hover-button" data-sidebar-theme-toggle>
+                            Modo
+                        </button>
+                        <button type="button" class="sidebar-hover-link sidebar-hover-button text-danger"
+                            onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                            Cerrar sesion
+                        </button>
                     </div>
                 </div>
             </div>

@@ -181,6 +181,10 @@
             margin-bottom: 8px;
         }
 
+        .app-sidebar-menu-primary > .menu-item {
+            position: relative;
+        }
+
         .app-sidebar-menu-primary .menu-link {
             min-height: 46px;
             border-radius: 14px;
@@ -214,6 +218,14 @@
             min-height: 40px;
             border-radius: 12px;
             padding-left: 10px;
+        }
+
+        .sidebar-hover-card {
+            display: none;
+        }
+
+        .sidebar-user-hover-card {
+            display: none;
         }
 
         .app-sidebar-footer {
@@ -393,6 +405,13 @@
             width: var(--admin-sidebar-mini-width);
         }
 
+        [data-kt-app-sidebar-minimize="on"] .app-sidebar,
+        [data-kt-app-sidebar-minimize="on"] .app-sidebar-wrapper,
+        [data-kt-app-sidebar-minimize="on"] .sidebar-shell,
+        [data-kt-app-sidebar-minimize="on"] .sidebar-scroll {
+            overflow: visible !important;
+        }
+
         [data-kt-app-sidebar-minimize="on"] .app-main {
             margin-left: var(--admin-sidebar-mini-width);
         }
@@ -426,11 +445,105 @@
             padding: 0;
             background: transparent;
             border-color: transparent;
+            position: relative;
         }
 
         [data-kt-app-sidebar-minimize="on"] .sidebar-user-menu-trigger {
             width: 44px;
             height: 44px;
+        }
+
+        [data-kt-app-sidebar-minimize="on"] .sidebar-user-card > .menu-sub-dropdown {
+            display: none !important;
+        }
+
+        [data-kt-app-sidebar-minimize="on"] .app-sidebar-menu-primary > .menu-item:hover > .sidebar-hover-card,
+        [data-kt-app-sidebar-minimize="on"] .app-sidebar-menu-primary > .menu-item:focus-within > .sidebar-hover-card {
+            display: flex;
+            position: absolute;
+            left: calc(var(--admin-sidebar-mini-width) - 6px);
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 120;
+            min-width: 220px;
+            max-width: 280px;
+            flex-direction: column;
+            gap: 6px;
+            padding: 10px;
+            border-radius: 14px;
+            background: #fff;
+            border: 1px solid rgba(15, 23, 42, .08);
+            box-shadow: 0 18px 45px rgba(15, 23, 42, .16);
+        }
+
+        [data-kt-app-sidebar-minimize="on"] .sidebar-hover-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: -14px;
+            width: 14px;
+        }
+
+        [data-kt-app-sidebar-minimize="on"] .sidebar-hover-title,
+        [data-kt-app-sidebar-minimize="on"] .sidebar-hover-link {
+            display: flex;
+            align-items: center;
+            min-height: 36px;
+            border-radius: 10px;
+            padding: 0 12px;
+            color: #1f2a44;
+            font-weight: 700;
+            text-decoration: none;
+            white-space: normal;
+            line-height: 1.2;
+        }
+
+        [data-kt-app-sidebar-minimize="on"] .sidebar-hover-link {
+            color: #667085;
+            font-size: .9rem;
+            font-weight: 600;
+        }
+
+        [data-kt-app-sidebar-minimize="on"] a.sidebar-hover-title:hover,
+        [data-kt-app-sidebar-minimize="on"] .sidebar-hover-link:hover,
+        [data-kt-app-sidebar-minimize="on"] .sidebar-hover-link.active {
+            background: var(--bs-primary-light);
+            color: var(--bs-primary);
+        }
+
+        [data-kt-app-sidebar-minimize="on"] .sidebar-user-card:hover > .sidebar-user-hover-card,
+        [data-kt-app-sidebar-minimize="on"] .sidebar-user-card:focus-within > .sidebar-user-hover-card,
+        [data-kt-app-sidebar-minimize="on"] .sidebar-user-hover-card:hover {
+            display: flex;
+            position: absolute;
+            left: calc(var(--admin-sidebar-mini-width) - 6px);
+            bottom: 0;
+            z-index: 120;
+            width: 275px;
+            flex-direction: column;
+            gap: 6px;
+            padding: 14px;
+            border-radius: 14px;
+            background: #fff;
+            border: 1px solid rgba(15, 23, 42, .08);
+            box-shadow: 0 18px 45px rgba(15, 23, 42, .16);
+        }
+
+        [data-kt-app-sidebar-minimize="on"] .sidebar-user-hover-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: -14px;
+            width: 14px;
+        }
+
+        .sidebar-hover-button {
+            width: 100%;
+            border: 0;
+            background: transparent;
+            text-align: left;
         }
 
         @media (min-width: 992px) {
@@ -456,8 +569,17 @@
             .sidebar-user-actions,
             .app-sidebar-menu-primary .menu-heading,
             .app-sidebar-menu-primary .menu-title,
-            .app-sidebar-menu-primary .menu-arrow {
+            .app-sidebar-menu-primary .menu-arrow,
+            .app-sidebar-menu-primary .menu-sub {
                 display: initial !important;
+            }
+
+            .sidebar-hover-card {
+                display: none !important;
+            }
+
+            .sidebar-user-hover-card {
+                display: none !important;
             }
 
             .app-container {
@@ -475,6 +597,13 @@
 
             .app-sidebar-wrapper {
                 height: 100vh !important;
+            }
+
+            [data-kt-app-sidebar-minimize="on"] .app-sidebar,
+            [data-kt-app-sidebar-minimize="on"] .app-sidebar-wrapper,
+            [data-kt-app-sidebar-minimize="on"] .sidebar-shell,
+            [data-kt-app-sidebar-minimize="on"] .sidebar-scroll {
+                overflow: visible !important;
             }
         }
     </style>
@@ -557,6 +686,19 @@
     <script src="{{ asset('/metronic/assets/plugins/custom/datatables/datatables.bundle.js') }}"></script>
     <script src="{{ asset('/metronic/assets/js/widgets.bundle.js') }}"></script>
     <script src="{{ asset('/metronic/assets/js/custom/widgets.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('[data-sidebar-theme-toggle]').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    var currentMode = document.documentElement.getAttribute('data-bs-theme') || 'light';
+                    var nextMode = currentMode === 'dark' ? 'light' : 'dark';
+
+                    localStorage.setItem('data-bs-theme', nextMode);
+                    document.documentElement.setAttribute('data-bs-theme', nextMode);
+                });
+            });
+        });
+    </script>
     @stack('scripts')
 </body>
 
