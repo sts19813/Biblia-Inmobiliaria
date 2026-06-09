@@ -16,6 +16,8 @@ class AdvisorDevelopmentCatalogController extends Controller
         $allDevelopments = Development::with(['developerProfile', 'documentFolders.files'])
             ->latest()
             ->get();
+        $comparisonMin = max(1, (int) config('development_comparison.min', 2));
+        $comparisonMax = max($comparisonMin, (int) config('development_comparison.max', 10));
 
         $filtered = $this->filterDevelopments($allDevelopments, $request);
         $perPage = 20;
@@ -52,6 +54,14 @@ class AdvisorDevelopmentCatalogController extends Controller
             'priceMin' => (float) $allDevelopments->min('price_from'),
             'priceMax' => (float) $allDevelopments->max('price_from'),
             'filters' => $request->all(),
+            'selectedComparisonIds' => collect($request->session()->get(DevelopmentComparisonController::sessionKey(), []))
+                ->map(fn ($id) => (int) $id)
+                ->filter()
+                ->unique()
+                ->values()
+                ->all(),
+            'comparisonMin' => $comparisonMin,
+            'comparisonMax' => $comparisonMax,
         ]);
     }
 

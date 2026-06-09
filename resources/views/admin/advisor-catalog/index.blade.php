@@ -34,7 +34,52 @@
 @push('styles')
     <style>
         .advisor-catalog-table {
-            min-width: 2350px;
+            min-width: 2450px;
+        }
+
+        .advisor-catalog-table th,
+        .advisor-catalog-table td {
+            background: #fff;
+        }
+
+        .advisor-catalog-table thead th {
+            background: #f8f8f8;
+        }
+
+        .advisor-catalog-table .advisor-select-col {
+            position: sticky;
+            left: 0;
+            width: 58px;
+            min-width: 58px;
+            max-width: 58px;
+            z-index: 5;
+            box-shadow: 10px 0 16px -18px rgba(15, 23, 42, .65);
+        }
+
+        .advisor-catalog-table .advisor-development-col {
+            position: sticky;
+            left: 58px;
+            width: 200px;
+            min-width: 200px;
+            z-index: 5;
+            box-shadow: 12px 0 18px -18px rgba(15, 23, 42, .65);
+        }
+
+        .advisor-catalog-table thead .advisor-select-col,
+        .advisor-catalog-table thead .advisor-development-col {
+            z-index: 7;
+            background: #f8f8f8;
+        }
+
+        .advisor-comparison-bar {
+            border: 1px solid rgba(47, 128, 237, .18);
+            border-radius: .8rem;
+            background: #f8fbff;
+            padding: .85rem 1rem;
+        }
+
+        .advisor-comparison-check {
+            cursor: pointer;
         }
 
         .advisor-filter-card {
@@ -227,10 +272,29 @@
                             </div>
                         </div>
                         <div class="card-toolbar">
-                            <div class="d-flex align-items-center position-relative">
-                                <i class="ki-outline ki-magnifier fs-3 position-absolute ms-4"></i>
-                                <input type="search" class="form-control form-control-solid w-250px ps-12"
-                                    placeholder="Filtrar tabla..." data-advisor-table-search>
+                            <div class="d-flex flex-wrap align-items-center justify-content-end gap-3">
+                                <div class="advisor-comparison-bar d-flex align-items-center gap-3">
+                                    <span class="badge badge-light-primary" data-comparison-counter>
+                                        {{ count($selectedComparisonIds) }} / {{ $comparisonMax }}
+                                    </span>
+                                    <span class="text-gray-700 fw-semibold fs-7">
+                                        Selecciona de {{ $comparisonMin }} a {{ $comparisonMax }}
+                                    </span>
+                                    <a href="{{ route('admin.development-comparison.index') }}"
+                                        @class([
+                                            'btn btn-sm btn-primary',
+                                            'disabled' => count($selectedComparisonIds) < $comparisonMin,
+                                        ])
+                                        data-comparison-link
+                                        @if (count($selectedComparisonIds) < $comparisonMin) aria-disabled="true" @endif>
+                                        Comparar
+                                    </a>
+                                </div>
+                                <div class="d-flex align-items-center position-relative">
+                                    <i class="ki-outline ki-magnifier fs-3 position-absolute ms-4"></i>
+                                    <input type="search" class="form-control form-control-solid w-250px ps-12"
+                                        placeholder="Filtrar tabla..." data-advisor-table-search>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -238,8 +302,9 @@
                         <div class="table-responsive">
                             <table class="table align-middle table-row-dashed fs-7 gy-4 advisor-catalog-table" data-advisor-catalog-table>
                                 <thead>
-                                    <tr class="text-start text-gray-500 fw-bold fs-8 text-uppercase gs-0">
-                                        <th>Desarrollo</th>
+                                    <tr class="text-start text-gray-700 fw-bold fs-8 text-uppercase gs-0">
+                                        <th class="advisor-select-col text-center"></th>
+                                        <th class="advisor-development-col">Desarrollo</th>
                                         <th>Ubicacion</th>
                                         <th>Precio desde</th>
                                         <th>Fecha entrega</th>
@@ -270,7 +335,15 @@
                                             $documentsCount = $development->documentFolders->sum(fn ($folder) => $folder->files->count());
                                         @endphp
                                         <tr>
-                                            <td>
+                                            <td class="advisor-select-col text-center">
+                                                <label class="form-check form-check-custom form-check-solid justify-content-center advisor-comparison-check">
+                                                    <input class="form-check-input" type="checkbox"
+                                                        value="{{ $development->id }}"
+                                                        data-comparison-checkbox
+                                                        @checked(in_array($development->id, $selectedComparisonIds, true))>
+                                                </label>
+                                            </td>
+                                            <td class="advisor-development-col">
                                                 <div class="d-flex align-items-center gap-3">
                                                     @if ($development->displayImageUrl())
                                                         <img src="{{ $development->displayImageUrl() }}" alt="{{ $development->name }}" class="advisor-dev-thumb">
@@ -327,7 +400,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="22" class="text-center py-12">
+                                            <td colspan="23" class="text-center py-12">
                                                 <i class="ki-outline ki-magnifier fs-3x text-gray-400 mb-4"></i>
                                                 <div class="fw-bold fs-4 text-gray-900">Sin desarrollos encontrados.</div>
                                                 <div class="text-muted fw-semibold">Ajusta los filtros para ampliar la busqueda.</div>
@@ -355,6 +428,18 @@
             var zoneSelect = document.querySelector('[data-zone-filter]');
             var table = document.querySelector('[data-advisor-catalog-table]');
             var search = document.querySelector('[data-advisor-table-search]');
+            var comparisonConfig = {
+                selectedIds: @json($selectedComparisonIds),
+                min: {{ $comparisonMin }},
+                max: {{ $comparisonMax }},
+                updateUrl: @json(route('admin.development-comparison.selection.update')),
+                compareUrl: @json(route('admin.development-comparison.index')),
+                csrf: @json(csrf_token()),
+            };
+            var comparisonSelected = new Set(comparisonConfig.selectedIds.map(String));
+            var comparisonCounter = document.querySelector('[data-comparison-counter]');
+            var comparisonLink = document.querySelector('[data-comparison-link]');
+            var comparisonCheckboxes = Array.prototype.slice.call(document.querySelectorAll('[data-comparison-checkbox]'));
 
             function selectedCities() {
                 return Array.prototype.slice.call(citySelect?.selectedOptions || []).map(function (option) {
@@ -399,6 +484,82 @@
                     row.style.display = row.textContent.toLowerCase().includes(needle) ? '' : 'none';
                 });
             });
+
+            function syncComparisonUi() {
+                comparisonCheckboxes.forEach(function (checkbox) {
+                    checkbox.checked = comparisonSelected.has(String(checkbox.value));
+                });
+
+                if (comparisonCounter) {
+                    comparisonCounter.textContent = comparisonSelected.size + ' / ' + comparisonConfig.max;
+                }
+
+                if (comparisonLink) {
+                    var enabled = comparisonSelected.size >= comparisonConfig.min;
+                    comparisonLink.classList.toggle('disabled', !enabled);
+                    comparisonLink.setAttribute('aria-disabled', enabled ? 'false' : 'true');
+                }
+            }
+
+            function persistComparison(previousSelected) {
+                return fetch(comparisonConfig.updateUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': comparisonConfig.csrf,
+                    },
+                    body: JSON.stringify({
+                        development_ids: Array.from(comparisonSelected),
+                    }),
+                }).then(function (response) {
+                    if (!response.ok) {
+                        throw new Error('No se pudo guardar la seleccion.');
+                    }
+
+                    return response.json();
+                }).then(function (payload) {
+                    comparisonSelected = new Set((payload.ids || []).map(String));
+                    syncComparisonUi();
+                }).catch(function (error) {
+                    comparisonSelected = previousSelected;
+                    syncComparisonUi();
+                    alert(error.message);
+                });
+            }
+
+            comparisonCheckboxes.forEach(function (checkbox) {
+                checkbox.addEventListener('change', function () {
+                    var previousSelected = new Set(comparisonSelected);
+                    var id = String(checkbox.value);
+
+                    if (checkbox.checked) {
+                        if (!comparisonSelected.has(id) && comparisonSelected.size >= comparisonConfig.max) {
+                            checkbox.checked = false;
+                            alert('Solo puedes comparar hasta ' + comparisonConfig.max + ' desarrollos.');
+                            return;
+                        }
+
+                        comparisonSelected.add(id);
+                    } else {
+                        comparisonSelected.delete(id);
+                    }
+
+                    syncComparisonUi();
+                    persistComparison(previousSelected);
+                });
+            });
+
+            comparisonLink?.addEventListener('click', function (event) {
+                if (comparisonSelected.size >= comparisonConfig.min) {
+                    return;
+                }
+
+                event.preventDefault();
+                alert('Selecciona al menos ' + comparisonConfig.min + ' desarrollos para comparar.');
+            });
+
+            syncComparisonUi();
         });
     </script>
 @endpush
