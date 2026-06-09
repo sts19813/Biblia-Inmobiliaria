@@ -26,6 +26,7 @@
             --admin-sidebar-text: rgba(210, 220, 243, .82);
             --admin-sidebar-text-active: #ffffff;
             --admin-sidebar-width: 300px !important;
+            --bs-text-white: #fff !important;
         }
 
         html,
@@ -49,7 +50,6 @@
         #kt_app_content_container {
             background: var(--admin-app-bg);
         }
-
         .app-page,
         .app-wrapper {
             min-height: 100vh;
@@ -94,7 +94,6 @@
             height: 100%;
             padding: 14px 12px 18px;
         }
-
         .sidebar-brand {
             display: flex;
             align-items: center;
