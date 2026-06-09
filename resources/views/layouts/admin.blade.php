@@ -19,14 +19,463 @@
             --bs-primary: #2f80ed;
             --bs-primary-active: #1b64c7;
             --bs-primary-light: #eaf3ff;
+            --admin-app-bg: #f7f8fc;
+            --admin-sidebar-bg: #1f2234;
+            --admin-sidebar-width: 250px;
+            --admin-sidebar-mini-width: 76px;
+            --admin-sidebar-text: rgba(210, 220, 243, .82);
+            --admin-sidebar-text-active: #ffffff;
+            --admin-sidebar-width: 300px !important;
+            --bs-text-white: #fff !important;
         }
 
-        .brand-wordmark {
-            color: var(--bs-gray-900);
-            font-size: 1.05rem;
+        html,
+        body {
+            min-height: 100%;
+            background: var(--admin-app-bg);
+        }
+
+        body {
+            margin: 0;
+            color: #1f2a44;
+            overflow-x: hidden;
+        }
+
+        .app-root,
+        .app-page,
+        .app-wrapper,
+        .app-main,
+        .app-shell,
+        .app-content,
+        #kt_app_content_container {
+            background: var(--admin-app-bg);
+        }
+        .app-page,
+        .app-wrapper {
+            min-height: 100vh;
+        }
+
+        .app-main{
+            width: 100% !important;
+        }
+
+        .table-responsive thead{
+            background: #f8f8f8;
+        }
+
+         .table-responsive thead tr th:first-child {
+            padding-left: 10px !important;
+        }
+
+        .table-responsive thead tr th:last-child {
+            padding-right: 10px !important;
+        }
+        .app-sidebar-menu-primary.menu>.menu-item>.menu-link .menu-title {
+            color: #d7d7d7 !important;
+        }
+        .app-sidebar {
+            position: fixed;
+            inset: 0 auto 0 0;
+            z-index: 105;
+            width: var(--admin-sidebar-width);
+            background: var(--admin-sidebar-bg);
+            box-shadow: 12px 0 28px rgba(17, 24, 39, .08);
+            transition: width .24s ease;
+        }
+
+        .app-sidebar-wrapper {
+            height: 100vh;
+            background: transparent;
+        }
+
+        .sidebar-shell {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 14px 12px 18px;
+        }
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-height: 56px;
+            margin-bottom: 20px;
+            padding: 0 6px;
+        }
+
+        .sidebar-brand-toggle {
+            width: 34px;
+            height: 34px;
+            border: 0;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, .08);
+            color: #d4ddf8;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .sidebar-brand-toggle:hover {
+            background: rgba(255, 255, 255, .16);
+            color: #fff;
+        }
+
+        .sidebar-brand-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+            text-decoration: none;
+        }
+
+        .sidebar-brand-mark {
+            width: 36px;
+            height: 36px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #34a3ff 0%, #2f80ed 100%);
+            color: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1rem;
+            letter-spacing: .02em;
+            flex-shrink: 0;
+        }
+
+        .sidebar-brand-wordmark {
+            color: #fff;
+            font-size: 1rem;
             font-weight: 700;
-            letter-spacing: 0;
             white-space: nowrap;
+        }
+
+        .sidebar-scroll {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            padding-right: 2px;
+        }
+
+        .sidebar-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar-scroll::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, .12);
+            border-radius: 999px;
+        }
+
+        .app-sidebar-menu-primary {
+            padding-inline: 0 !important;
+            margin-bottom: 0 !important;
+        }
+
+        .app-sidebar-menu-primary .menu-heading {
+            color: rgba(177, 188, 214, .55);
+            letter-spacing: .08em;
+        }
+
+        .app-sidebar-menu-primary .menu-item {
+            margin-bottom: 8px;
+        }
+
+        .app-sidebar-menu-primary .menu-link {
+            min-height: 46px;
+            border-radius: 14px;
+            padding: 0 14px;
+            color: var(--admin-sidebar-text);
+            transition: background-color .2s ease, color .2s ease;
+        }
+
+        .app-sidebar-menu-primary .menu-link:hover,
+        .app-sidebar-menu-primary .menu-link.active {
+            background: rgba(52, 163, 255, .16);
+            color: var(--admin-sidebar-text-active);
+        }
+
+        .app-sidebar-menu-primary .menu-icon {
+            margin-right: 12px !important;
+        }
+
+        .app-sidebar-menu-primary .menu-icon i,
+        .app-sidebar-menu-primary .menu-title,
+        .app-sidebar-menu-primary .menu-arrow {
+            color: currentColor;
+        }
+
+        .app-sidebar-menu-primary .menu-sub {
+            margin-left: 0;
+            padding-left: 14px;
+        }
+
+        .app-sidebar-menu-primary .menu-sub .menu-link {
+            min-height: 40px;
+            border-radius: 12px;
+            padding-left: 10px;
+        }
+
+        .app-sidebar-footer {
+            margin-top: auto;
+            padding-top: 16px;
+        }
+
+        .sidebar-user-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-height: 56px;
+            padding: 10px 12px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, .08);
+            border: 1px solid rgba(255, 255, 255, .07);
+        }
+
+        .sidebar-user-menu-trigger {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            overflow: hidden;
+            flex-shrink: 0;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(248, 40, 90, .22);
+        }
+
+        .sidebar-user-details {
+            min-width: 0;
+        }
+
+        .sidebar-user-name {
+            color: #fff;
+            font-size: .9rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .sidebar-user-email {
+            color: rgba(191, 202, 230, .72);
+            font-size: .75rem;
+            line-height: 1.2;
+        }
+
+        .sidebar-user-action {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            border: 0;
+            background: rgba(255, 255, 255, .12);
+            color: #d4ddf8;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sidebar-user-action:hover {
+            background: rgba(255, 255, 255, .2);
+            color: #fff;
+        }
+
+        .sidebar-user-action.is-danger {
+            background: rgba(248, 40, 90, .18);
+            color: #ffd9e2;
+        }
+
+        .sidebar-user-action.is-danger:hover {
+            background: rgba(248, 40, 90, .28);
+            color: #fff;
+        }
+
+        .app-main {
+            min-height: 100vh;
+            margin-left: var(--admin-sidebar-width);
+            width: auto;
+            min-width: 0;
+            transition: margin-left .24s ease;
+        }
+
+        .app-shell {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            width: 100%;
+            min-width: 0;
+        }
+
+        .app-toolbar {
+            padding: 28px 0 18px !important;
+            background: var(--admin-app-bg);
+            overflow: visible;
+        }
+
+        #kt_app_toolbar,
+        #kt_app_toolbar_container {
+            background: var(--admin-app-bg);
+            overflow: visible;
+        }
+
+        #kt_app_toolbar_container {
+            align-items: flex-start !important;
+        }
+
+        #kt_app_toolbar_container > :first-child {
+            flex: 1 1 420px;
+            min-width: 0;
+        }
+
+        #kt_app_toolbar_container > :last-child {
+            flex: 0 0 auto;
+        }
+
+        .app-toolbar .page-heading,
+        .app-toolbar .breadcrumb,
+        .app-toolbar .breadcrumb-item,
+        .app-toolbar a,
+        .app-toolbar .text-muted {
+            white-space: normal;
+            word-break: break-word;
+        }
+
+        .app-content {
+            flex: 1 1 auto;
+            padding-top: 0 !important;
+            width: 100%;
+            min-width: 0;
+            overflow-x: auto;
+            overflow-y: visible;
+        }
+
+        .app-container {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0;
+            padding-left: 20px;
+            padding-right: 20px;
+        }
+
+        #kt_app_content_container {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0;
+            overflow-x: auto;
+            overflow-y: visible;
+            padding-bottom: 8px;
+        }
+
+        #kt_app_toolbar_container,
+        #kt_app_content_container,
+        .app-footer .app-container {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+
+        #kt_app_content_container > .card,
+        #kt_app_content_container > form.card {
+            width: 100%;
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid rgba(15, 23, 42, .05);
+            box-shadow: 0 8px 26px rgba(15, 23, 42, .045);
+        }
+
+        .app-footer {
+            background: transparent;
+        }
+
+        .app-footer .app-container {
+            padding-top: 18px;
+            padding-bottom: 10px;
+        }
+
+        [data-kt-app-sidebar-minimize="on"] .app-sidebar {
+            width: var(--admin-sidebar-mini-width);
+        }
+
+        [data-kt-app-sidebar-minimize="on"] .app-main {
+            margin-left: var(--admin-sidebar-mini-width);
+        }
+
+        [data-kt-app-sidebar-minimize="on"] .sidebar-brand {
+            justify-content: center;
+            padding-inline: 0;
+        }
+
+        [data-kt-app-sidebar-minimize="on"] .sidebar-brand-link,
+        [data-kt-app-sidebar-minimize="on"] .app-sidebar-menu-primary .menu-heading,
+        [data-kt-app-sidebar-minimize="on"] .app-sidebar-menu-primary .menu-title,
+        [data-kt-app-sidebar-minimize="on"] .app-sidebar-menu-primary .menu-arrow,
+        [data-kt-app-sidebar-minimize="on"] .app-sidebar-menu-primary .menu-sub,
+        [data-kt-app-sidebar-minimize="on"] .sidebar-user-details,
+        [data-kt-app-sidebar-minimize="on"] .sidebar-user-actions {
+            display: none !important;
+        }
+
+        [data-kt-app-sidebar-minimize="on"] .app-sidebar-menu-primary .menu-link {
+            justify-content: center;
+            padding-inline: 0;
+        }
+
+        [data-kt-app-sidebar-minimize="on"] .app-sidebar-menu-primary .menu-icon {
+            margin-right: 0 !important;
+        }
+
+        [data-kt-app-sidebar-minimize="on"] .sidebar-user-card {
+            justify-content: center;
+            padding: 0;
+            background: transparent;
+            border-color: transparent;
+        }
+
+        [data-kt-app-sidebar-minimize="on"] .sidebar-user-menu-trigger {
+            width: 44px;
+            height: 44px;
+        }
+
+        @media (min-width: 992px) {
+            [data-kt-app-sidebar-fixed=true] .app-wrapper {
+                margin-left: 30px !important;
+            }
+        }
+
+        @media (max-width: 991.98px) {
+            .app-sidebar {
+                width: var(--admin-sidebar-width);
+            }
+
+            .app-main {
+                margin-left: 0;
+            }
+
+            .sidebar-brand-link {
+                display: flex !important;
+            }
+
+            .sidebar-user-details,
+            .sidebar-user-actions,
+            .app-sidebar-menu-primary .menu-heading,
+            .app-sidebar-menu-primary .menu-title,
+            .app-sidebar-menu-primary .menu-arrow {
+                display: initial !important;
+            }
+
+            .app-container {
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+        }
+
+        @media (min-width: 992px) {
+            .app-sidebar {
+                top: 0 !important;
+                bottom: 0 !important;
+                overflow: hidden !important;
+            }
+
+            .app-sidebar-wrapper {
+                height: 100vh !important;
+            }
         }
     </style>
 
@@ -37,9 +486,10 @@
     $isSidebarMinimized = request()->cookie('sidebar_minimize_state', 'on') === 'on';
 @endphp
 
-<body id="kt_app_body" data-kt-app-header-fixed="true" data-kt-app-header-fixed-mobile="true"
-    data-kt-app-sidebar-enabled="true" data-kt-app-sidebar-fixed="true" data-kt-app-sidebar-hoverable="true"
-    data-kt-app-sidebar-push-toolbar="true" data-kt-app-sidebar-push-footer="true"
+<body id="kt_app_body"
+    data-kt-app-sidebar-enabled="true"
+    data-kt-app-sidebar-fixed="true"
+    data-kt-app-sidebar-hoverable="false"
     @if ($isSidebarMinimized)
         data-kt-app-sidebar-minimize="on"
     @endif
@@ -59,15 +509,13 @@
 
     <div class="d-flex flex-column flex-root app-root" id="kt_app_root">
         <div class="app-page flex-column flex-column-fluid" id="kt_app_page">
-            @include('partials.header')
-
-            <div class="app-wrapper flex-column flex-row-fluid" id="kt_app_wrapper">
+            <div class="app-wrapper" id="kt_app_wrapper">
                 @include('partials.sidebar')
 
-                <div class="app-main flex-column flex-row-fluid" id="kt_app_main">
-                    <div class="d-flex flex-column flex-column-fluid">
+                <main class="app-main" id="kt_app_main">
+                    <div class="app-shell">
                         @hasSection('toolbar')
-                            <div id="kt_app_toolbar" class="app-toolbar py-3 py-lg-6">
+                            <div id="kt_app_toolbar" class="app-toolbar">
                                 <div id="kt_app_toolbar_container"
                                     class="app-container container-fluid d-flex flex-stack flex-wrap gap-3">
                                     @yield('toolbar')
@@ -75,8 +523,7 @@
                             </div>
                         @endif
 
-                        <div id="kt_app_content" class="app-content flex-column-fluid">
-                            <div id="kt_app_content_container" class="app-container container-fluid">
+                           
                                 @if (session('status'))
                                     <div class="alert alert-success d-flex align-items-center mb-6">
                                         <i class="ki-outline ki-check-circle fs-2hx text-success me-4"></i>
@@ -96,12 +543,10 @@
                                 @endif
 
                                 @yield('content')
-                            </div>
-                        </div>
-                    </div>
 
-                    @include('partials.footer')
-                </div>
+                        @include('partials.footer')
+                    </div>
+                </main>
             </div>
         </div>
     </div>

@@ -67,6 +67,11 @@
             height: 74px;
             object-fit: contain;
         }
+        
+        .ki-document.ki-outline:before
+        {
+            color: white !important;
+        }
     </style>
 </head>
 <body>
@@ -90,8 +95,8 @@
                     </div>
                 </div>
                 <div>
-                    <h1 class="display-5 fw-bold text-white mb-3">{{ $development->name }}</h1>
-                    <div class="fs-4 fw-semibold">
+                    <h1 class="display-5 fw-bold text-white mb-3" style="color: #fff !important;">{{ $development->name }}</h1>
+                    <div class="fs-4 fw-semibold" style="color: #fff !important;">
                         <i class="ki-outline ki-geolocation fs-2 me-2"></i>
                         {{ $development->city }}, {{ $development->zone }}
                     </div>
@@ -100,7 +105,7 @@
                             <i class="ki-outline ki-geolocation fs-2"></i>
                             Ver ubicacion en mapa
                         </a>
-                        <span class="btn btn-light-primary pe-none">
+                        <span class="btn btn-light-primary pe-none d-none">
                             {{ $publicFileCount }} {{ $publicFileCount === 1 ? 'archivo publico' : 'archivos publicos' }}
                         </span>
                     </div>

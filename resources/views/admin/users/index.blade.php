@@ -48,7 +48,7 @@
                 <div class="table-responsive">
                     <table class="table align-middle table-row-dashed fs-6 gy-5" id="kt_users_table">
                         <thead>
-                            <tr class="text-start text-gray-500 fw-bold fs-7 text-uppercase gs-0">
+                            <tr class="text-start text-gray-700 fw-bold fs-7 text-uppercase gs-0">
                                 <th>Usuario</th>
                                 <th>Contacto</th>
                                 <th>Empresa</th>
