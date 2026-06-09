@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\AdvisorDevelopmentCatalogController;
 use App\Http\Controllers\Admin\AmenityController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DeveloperProfileController;
+use App\Http\Controllers\Admin\DevelopmentComparisonController;
 use App\Http\Controllers\Admin\DevelopmentController;
 use App\Http\Controllers\Admin\DevelopmentDocumentController;
 use App\Http\Controllers\Admin\PermissionController;
@@ -58,6 +59,10 @@ Route::get('mini-drive/{token}/archivo/{file}/descargar', [PublicDevelopmentDocu
 Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
     Route::get('catalogo-desarrollos', [AdvisorDevelopmentCatalogController::class, 'index'])->name('advisor-catalog.index');
+    Route::get('comparador-desarrollos', [DevelopmentComparisonController::class, 'index'])->name('development-comparison.index');
+    Route::post('comparador-desarrollos/seleccion', [DevelopmentComparisonController::class, 'updateSelection'])->name('development-comparison.selection.update');
+    Route::delete('comparador-desarrollos/seleccion', [DevelopmentComparisonController::class, 'clear'])->name('development-comparison.selection.clear');
+    Route::delete('comparador-desarrollos/seleccion/{development}', [DevelopmentComparisonController::class, 'remove'])->name('development-comparison.selection.remove');
     Route::get('desarrollos', [DevelopmentController::class, 'index'])->name('developments.index');
     Route::get('desarrollos/crear', [DevelopmentController::class, 'create'])->name('developments.create');
     Route::post('desarrollos', [DevelopmentController::class, 'store'])->name('developments.store');

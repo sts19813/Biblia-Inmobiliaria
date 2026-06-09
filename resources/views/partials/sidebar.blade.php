@@ -65,6 +65,14 @@
                     </div>
 
                     <div class="menu-item">
+                        <a class="menu-link {{ request()->routeIs('admin.development-comparison.*') ? 'active' : '' }}"
+                            href="{{ route('admin.development-comparison.index') }}">
+                            <span class="menu-icon"><i class="ki-outline ki-switch fs-2"></i></span>
+                            <span class="menu-title">Comparador</span>
+                        </a>
+                    </div>
+
+                    <div class="menu-item">
                         <a class="menu-link {{ request()->routeIs('admin.developments.*') ? 'active' : '' }}"
                             href="{{ route('admin.developments.index') }}">
                             <span class="menu-icon"><i class="ki-outline ki-home-2 fs-2"></i></span>
