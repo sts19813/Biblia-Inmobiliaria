@@ -172,15 +172,11 @@
                     </div>
 
                     <div class="sidebar-user-actions d-flex align-items-center gap-2">
-                        <button type="button"
+                        <a href="{{ route('admin.users.edit', $user) }}"
                             class="sidebar-user-action"
-                            data-kt-menu-trigger="{default: 'click', lg: 'click'}"
-                            data-kt-menu-attach="body"
-                            data-kt-menu-placement="right-end"
-                            data-kt-menu-offset="12px, 0"
-                            aria-label="Opciones">
+                            aria-label="Mi perfil">
                             <i class="ki-outline ki-setting-4 fs-5"></i>
-                        </button>
+                        </a>
                         <a href="#"
                             class="sidebar-user-action is-danger"
                             onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
