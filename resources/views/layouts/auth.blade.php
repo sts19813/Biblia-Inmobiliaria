@@ -53,7 +53,7 @@
             <div class="d-flex flex-center w-lg-50 pt-15 pt-lg-0 px-10">
                 <div class="d-flex flex-center flex-lg-start flex-column">
                     <a href="{{ url('/') }}" class="mb-7">
-                        <img width="250px" alt="Logo" src="{{ asset('/metronic/assets/media/logos/default.svg') }}" />
+                        <img width="400px" alt="Biblia Inmobiliaria" src="{{ asset('assets/img/biblia-inmobiliaria-logo.svg') }}" />
                     </a>
                     <h2 class="text-white fw-normal m-0"></h2>
                 </div>
