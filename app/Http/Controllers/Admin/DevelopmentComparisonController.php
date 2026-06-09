@@ -153,7 +153,6 @@ class DevelopmentComparisonController extends Controller
             $this->row($developments, 'Disponibilidad', fn (Development $development) => $development->availability ?: '-'),
             $this->row($developments, 'Tipo creditos', fn (Development $development) => $development->payment_methods ?: '-'),
             $this->row($developments, 'Promociones', fn (Development $development) => $development->active_promotions ?: '-'),
-            $this->row($developments, 'Descripcion', fn (Development $development) => $development->description ?: '-'),
         ];
     }
 
