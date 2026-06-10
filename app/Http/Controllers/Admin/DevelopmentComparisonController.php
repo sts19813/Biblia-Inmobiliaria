@@ -14,17 +14,12 @@ class DevelopmentComparisonController extends Controller
 
     public function index(Request $request)
     {
-        $selectedIds = $this->selectedIds($request);
-        $developments = Development::with('developerProfile')
-            ->whereIn('id', $selectedIds)
-            ->get()
-            ->sortBy(fn (Development $development) => array_search($development->id, $selectedIds, true))
-            ->values();
+        $comparisonItems = $this->selectedItems($request);
 
         return view('admin.development-comparison.index', [
-            'developments' => $developments,
-            'sections' => $this->comparisonSections($developments),
-            'selectedCount' => $developments->count(),
+            'comparisonItems' => $comparisonItems,
+            'sections' => $this->comparisonSections($comparisonItems),
+            'selectedCount' => $comparisonItems->count(),
             'comparisonMin' => $this->min(),
             'comparisonMax' => $this->max(),
         ]);
@@ -33,30 +28,31 @@ class DevelopmentComparisonController extends Controller
     public function updateSelection(Request $request)
     {
         $data = $request->validate([
-            'development_ids' => ['nullable', 'array', 'max:' . $this->max()],
+            'comparison_items' => ['nullable', 'array', 'max:'.$this->max()],
+            'comparison_items.*' => ['string', 'max:60', 'regex:/^\d+:\d+$/'],
+            'development_ids' => ['nullable', 'array', 'max:'.$this->max()],
             'development_ids.*' => ['integer', 'exists:developments,id'],
         ]);
 
-        $selectedIds = collect($data['development_ids'] ?? [])
-            ->map(fn ($id) => (int) $id)
-            ->filter()
-            ->unique()
-            ->values()
-            ->all();
+        $selectedKeys = $this->normalizeSelectionKeys(
+            $data['comparison_items'] ?? collect($data['development_ids'] ?? [])
+                ->map(fn ($id) => ((int) $id).':0')
+                ->all()
+        );
 
-        $request->session()->put(self::SESSION_KEY, $selectedIds);
+        $request->session()->put(self::SESSION_KEY, $selectedKeys);
 
-        return response()->json($this->selectionPayload($selectedIds));
+        return response()->json($this->selectionPayload($selectedKeys));
     }
 
-    public function remove(Request $request, Development $development)
+    public function remove(Request $request, string $selection)
     {
-        $selectedIds = collect($this->selectedIds($request))
-            ->reject(fn (int $id) => $id === $development->id)
+        $selectedKeys = collect($this->selectedKeys($request))
+            ->reject(fn (string $key) => $key === $selection)
             ->values()
             ->all();
 
-        $request->session()->put(self::SESSION_KEY, $selectedIds);
+        $request->session()->put(self::SESSION_KEY, $selectedKeys);
 
         return redirect()->route('admin.development-comparison.index');
     }
@@ -77,107 +73,166 @@ class DevelopmentComparisonController extends Controller
         return self::SESSION_KEY;
     }
 
-    private function selectedIds(Request $request): array
+    private function selectedKeys(Request $request): array
     {
-        $ids = collect($request->session()->get(self::SESSION_KEY, []))
-            ->map(fn ($id) => (int) $id)
-            ->filter()
+        return $this->normalizeSelectionKeys($request->session()->get(self::SESSION_KEY, []));
+    }
+
+    private function selectedItems(Request $request): Collection
+    {
+        $selectedKeys = $this->selectedKeys($request);
+
+        if ($selectedKeys === []) {
+            return collect();
+        }
+
+        $developmentIds = collect($selectedKeys)
+            ->map(fn (string $key) => $this->selectionParts($key)[0])
             ->unique()
             ->values();
 
-        if ($ids->isEmpty()) {
-            return [];
+        $developments = Development::with('developerProfile')
+            ->whereIn('id', $developmentIds)
+            ->get()
+            ->keyBy('id');
+
+        $items = collect($selectedKeys)
+            ->map(function (string $key) use ($developments) {
+                [$developmentId, $productIndex] = $this->selectionParts($key);
+                $development = $developments->get($developmentId);
+
+                if (! $development) {
+                    return null;
+                }
+
+                $products = $development->productDetailsItems();
+                $products = $products === [] ? [['product_name' => $development->name]] : $products;
+                $product = $products[$productIndex] ?? null;
+
+                if (! $product) {
+                    return null;
+                }
+
+                return [
+                    'key' => $key,
+                    'development' => $development,
+                    'product_index' => $productIndex,
+                    'product' => $product,
+                ];
+            })
+            ->filter()
+            ->values();
+
+        $validKeys = $items->pluck('key')->all();
+
+        if ($validKeys !== $selectedKeys) {
+            $request->session()->put(self::SESSION_KEY, $validKeys);
         }
 
-        $existingIds = Development::whereIn('id', $ids)->pluck('id')->all();
-        $selectedIds = $ids
-            ->filter(fn (int $id) => in_array($id, $existingIds, true))
-            ->values()
-            ->all();
-
-        if ($selectedIds !== $ids->all()) {
-            $request->session()->put(self::SESSION_KEY, $selectedIds);
-        }
-
-        return $selectedIds;
+        return $items;
     }
 
-    private function selectionPayload(array $selectedIds): array
+    private function normalizeSelectionKeys(mixed $keys): array
+    {
+        return collect((array) $keys)
+            ->map(fn ($key) => is_numeric($key) ? ((int) $key).':0' : (string) $key)
+            ->filter(fn (string $key) => preg_match('/^\d+:\d+$/', $key))
+            ->map(function (string $key) {
+                [$developmentId, $productIndex] = $this->selectionParts($key);
+
+                return Development::makeComparisonSelectionKey($developmentId, $productIndex);
+            })
+            ->unique()
+            ->take($this->max())
+            ->values()
+            ->all();
+    }
+
+    private function selectionParts(string $key): array
+    {
+        [$developmentId, $productIndex] = array_map('intval', explode(':', $key, 2));
+
+        return [$developmentId, max(0, $productIndex)];
+    }
+
+    private function selectionPayload(array $selectedKeys): array
     {
         return [
-            'ids' => $selectedIds,
-            'count' => count($selectedIds),
+            'items' => $selectedKeys,
+            'ids' => $selectedKeys,
+            'count' => count($selectedKeys),
             'min' => $this->min(),
             'max' => $this->max(),
             'compare_url' => route('admin.development-comparison.index'),
         ];
     }
 
-    private function comparisonSections(Collection $developments): array
+    private function comparisonSections(Collection $items): array
     {
-        if ($developments->isEmpty()) {
+        if ($items->isEmpty()) {
             return [];
         }
 
         return [
             [
                 'title' => null,
-                'rows' => $this->mainRows($developments),
+                'rows' => $this->mainRows($items),
             ],
             [
                 'title' => 'Detalles',
-                'rows' => $this->detailRows($developments),
+                'rows' => $this->detailRows($items),
             ],
             [
                 'title' => 'Amenidades',
-                'rows' => $this->amenityRows($developments),
+                'rows' => $this->amenityRows($items),
             ],
         ];
     }
 
-    private function mainRows(Collection $developments): array
+    private function mainRows(Collection $items): array
     {
         return [
-            $this->row($developments, 'Tipo', fn (Development $development) => $this->propertyTypeLabel($development)),
-            $this->row($developments, 'Ubicacion', fn (Development $development) => $this->lines($development->zone, $development->city)),
-            $this->row($developments, 'Precio', fn (Development $development) => $this->money($development->price_from), 'price'),
-            $this->row($developments, 'Precio por m2', fn (Development $development) => $this->money($development->price_per_m2) . '/m2'),
-            $this->row($developments, 'Fecha de entrega', fn (Development $development) => $development->delivery_date?->format('d/m/Y') ?: '-'),
-            $this->row($developments, 'Estado', fn (Development $development) => $this->statusLabel($development)),
-            $this->row($developments, 'Enganche', fn (Development $development) => $this->money($development->down_payment)),
-            $this->row($developments, 'Mensualidad', fn (Development $development) => $this->money($development->monthly_payments)),
-            $this->row($developments, 'Comision', fn (Development $development) => number_format((float) $development->commission_percentage, 1) . '%', 'commission'),
-            $this->row($developments, 'Bono asesor', fn (Development $development) => $development->advisor_bonus ? $this->money($development->advisor_bonus) : '-'),
-            $this->row($developments, 'Mantenimiento', fn (Development $development) => $development->maintenance_fee ? $this->money($development->maintenance_fee) : '-'),
-            $this->row($developments, 'Unidades totales', fn (Development $development) => $development->total_units ?: '-'),
-            $this->row($developments, 'Disponibilidad', fn (Development $development) => $development->availability ?: '-'),
-            $this->row($developments, 'Tipo creditos', fn (Development $development) => $development->payment_methods ?: '-'),
-            $this->row($developments, 'Promociones', fn (Development $development) => $development->active_promotions ?: '-'),
+            $this->row($items, 'Desarrollo', fn (array $item) => $item['development']->name),
+            $this->row($items, 'Tipo', fn (array $item) => $this->propertyTypeLabel($item['development'])),
+            $this->row($items, 'Ubicacion', fn (array $item) => $this->lines($item['development']->zone, $item['development']->city)),
+            $this->row($items, 'Precio', fn (array $item) => $this->money($item['development']->price_from), 'price'),
+            $this->row($items, 'Precio por m2', fn (array $item) => $this->money($item['development']->price_per_m2).'/m2'),
+            $this->row($items, 'Fecha de entrega', fn (array $item) => $item['development']->delivery_date?->format('d/m/Y') ?: '-'),
+            $this->row($items, 'Estado', fn (array $item) => $this->statusLabel($item['development'])),
+            $this->row($items, 'Enganche', fn (array $item) => $this->money($item['development']->down_payment)),
+            $this->row($items, 'Mensualidad', fn (array $item) => $this->money($item['development']->monthly_payments)),
+            $this->row($items, 'Comision', fn (array $item) => number_format((float) $item['development']->commission_percentage, 1).'%', 'commission'),
+            $this->row($items, 'Bono asesor', fn (array $item) => $item['development']->advisor_bonus ? $this->money($item['development']->advisor_bonus) : '-'),
+            $this->row($items, 'Mantenimiento', fn (array $item) => $item['development']->maintenance_fee ? $this->money($item['development']->maintenance_fee) : '-'),
+            $this->row($items, 'Unidades totales', fn (array $item) => $item['development']->total_units ?: '-'),
+            $this->row($items, 'Disponibilidad', fn (array $item) => $item['development']->availability ?: '-'),
+            $this->row($items, 'Tipo creditos', fn (array $item) => $item['development']->payment_methods ?: '-'),
+            $this->row($items, 'Promociones', fn (array $item) => $item['development']->active_promotions ?: '-'),
         ];
     }
 
-    private function detailRows(Collection $developments): array
+    private function detailRows(Collection $items): array
     {
         $detailOrder = array_flip(array_keys(DevelopmentController::DETAIL_LABELS));
-        $detailKeys = $developments
-            ->flatMap(fn (Development $development) => array_keys($development->property_details ?? []))
+        $detailKeys = $items
+            ->flatMap(fn (array $item) => array_keys($item['product'] ?? []))
             ->unique()
             ->sortBy(fn (string $key) => $detailOrder[$key] ?? PHP_INT_MAX)
             ->values();
 
         return $detailKeys
             ->map(fn (string $key) => $this->row(
-                $developments,
+                $items,
                 DevelopmentController::DETAIL_LABELS[$key] ?? str($key)->replace('_', ' ')->title()->value(),
-                fn (Development $development) => $this->detailValue($development->property_details[$key] ?? null)
+                fn (array $item) => $this->detailValue($item['product'][$key] ?? null)
             ))
             ->all();
     }
 
-    private function amenityRows(Collection $developments): array
+    private function amenityRows(Collection $items): array
     {
         $amenities = collect(Amenity::where('is_active', true)->orderBy('name')->pluck('name'))
-            ->merge($developments->flatMap(fn (Development $development) => $development->amenities ?? []))
+            ->merge($items->flatMap(fn (array $item) => $item['development']->amenities ?? []))
             ->filter()
             ->unique(fn (string $amenity) => str($amenity)->lower()->ascii()->value())
             ->sort()
@@ -187,22 +242,22 @@ class DevelopmentComparisonController extends Controller
             ->map(fn (string $amenity) => [
                 'label' => $amenity,
                 'variant' => 'boolean',
-                'values' => $developments
-                    ->mapWithKeys(fn (Development $development) => [
-                        $development->id => $this->hasAmenity($development, $amenity),
+                'values' => $items
+                    ->mapWithKeys(fn (array $item) => [
+                        $item['key'] => $this->hasAmenity($item['development'], $amenity),
                     ])
                     ->all(),
             ])
             ->all();
     }
 
-    private function row(Collection $developments, string $label, callable $value, string $variant = 'default'): array
+    private function row(Collection $items, string $label, callable $value, string $variant = 'default'): array
     {
         return [
             'label' => $label,
             'variant' => $variant,
-            'values' => $developments
-                ->mapWithKeys(fn (Development $development) => [$development->id => $value($development)])
+            'values' => $items
+                ->mapWithKeys(fn (array $item) => [$item['key'] => $value($item)])
                 ->all(),
         ];
     }
@@ -265,7 +320,7 @@ class DevelopmentComparisonController extends Controller
             return '-';
         }
 
-        return '$' . number_format((float) $value, 0);
+        return '$'.number_format((float) $value, 0);
     }
 
     private function min(): int

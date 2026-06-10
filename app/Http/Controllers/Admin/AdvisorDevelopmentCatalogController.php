@@ -19,10 +19,11 @@ class AdvisorDevelopmentCatalogController extends Controller
         $comparisonMin = max(1, (int) config('development_comparison.min', 2));
         $comparisonMax = max($comparisonMin, (int) config('development_comparison.max', 10));
 
-        $filtered = $this->filterDevelopments($allDevelopments, $request);
+        $allCatalogItems = $this->catalogItems($allDevelopments);
+        $filtered = $this->filterCatalogItems($allCatalogItems, $request);
         $perPage = 20;
         $page = LengthAwarePaginator::resolveCurrentPage();
-        $developments = new LengthAwarePaginator(
+        $catalogItems = new LengthAwarePaginator(
             $filtered->forPage($page, $perPage)->values(),
             $filtered->count(),
             $perPage,
@@ -34,8 +35,9 @@ class AdvisorDevelopmentCatalogController extends Controller
         );
 
         return view('admin.advisor-catalog.index', [
-            'developments' => $developments,
+            'catalogItems' => $catalogItems,
             'totalDevelopments' => $allDevelopments->count(),
+            'totalProducts' => $allCatalogItems->count(),
             'propertyTypes' => [
                 'casa' => 'Casa',
                 'departamento' => 'Departamento',
@@ -54,32 +56,45 @@ class AdvisorDevelopmentCatalogController extends Controller
             'priceMin' => (float) $allDevelopments->min('price_from'),
             'priceMax' => (float) $allDevelopments->max('price_from'),
             'filters' => $request->all(),
-            'selectedComparisonIds' => collect($request->session()->get(DevelopmentComparisonController::sessionKey(), []))
-                ->map(fn ($id) => (int) $id)
-                ->filter()
-                ->unique()
-                ->values()
-                ->all(),
+            'selectedComparisonKeys' => $this->selectedComparisonKeys($request),
             'comparisonMin' => $comparisonMin,
             'comparisonMax' => $comparisonMax,
         ]);
     }
 
-    private function filterDevelopments(Collection $developments, Request $request): Collection
+    private function catalogItems(Collection $developments): Collection
     {
         return $developments
-            ->filter(fn (Development $development) => $this->matchesPropertyType($development, $request->input('property_types', [])))
-            ->filter(fn (Development $development) => $this->matchesIn($development->city, $request->input('cities', [])))
-            ->filter(fn (Development $development) => $this->matchesIn($development->zone, $request->input('zones', [])))
-            ->filter(fn (Development $development) => $this->matchesIn($development->status, $request->input('statuses', [])))
-            ->filter(fn (Development $development) => $this->matchesRange((float) $development->price_from, $request->input('price_min'), $request->input('price_max')))
-            ->filter(fn (Development $development) => $this->matchesBedrooms($development, $request->input('bedrooms')))
-            ->filter(fn (Development $development) => $this->matchesBathrooms($development, $request->input('bathrooms')))
-            ->filter(fn (Development $development) => $this->matchesPaymentMethods($development, $request->input('payment_methods', [])))
-            ->filter(fn (Development $development) => $this->matchesAdvisorBonus($development, $request->input('advisor_bonus')))
-            ->filter(fn (Development $development) => $this->matchesAmenities($development, $request->input('amenities', [])))
-            ->filter(fn (Development $development) => $this->matchesRange($this->detailNumber($development, 'construction_m2'), $request->input('construction_m2_min'), $request->input('construction_m2_max')))
-            ->filter(fn (Development $development) => $this->matchesRange($this->detailNumber($development, 'land_m2'), $request->input('land_m2_min'), $request->input('land_m2_max')))
+            ->flatMap(function (Development $development) {
+                $products = $development->productDetailsItems();
+                $products = $products === [] ? [['product_name' => $development->name]] : $products;
+
+                return collect($products)
+                    ->map(fn (array $product, int $index) => [
+                        'key' => $development->comparisonSelectionKey($index),
+                        'development' => $development,
+                        'product_index' => $index,
+                        'product' => $product,
+                    ]);
+            })
+            ->values();
+    }
+
+    private function filterCatalogItems(Collection $items, Request $request): Collection
+    {
+        return $items
+            ->filter(fn (array $item) => $this->matchesPropertyType($item['development'], $request->input('property_types', [])))
+            ->filter(fn (array $item) => $this->matchesIn($item['development']->city, $request->input('cities', [])))
+            ->filter(fn (array $item) => $this->matchesIn($item['development']->zone, $request->input('zones', [])))
+            ->filter(fn (array $item) => $this->matchesIn($item['development']->status, $request->input('statuses', [])))
+            ->filter(fn (array $item) => $this->matchesRange((float) $item['development']->price_from, $request->input('price_min'), $request->input('price_max')))
+            ->filter(fn (array $item) => $this->matchesBedrooms($item['product'], $request->input('bedrooms')))
+            ->filter(fn (array $item) => $this->matchesBathrooms($item['product'], $request->input('bathrooms')))
+            ->filter(fn (array $item) => $this->matchesPaymentMethods($item['development'], $request->input('payment_methods', [])))
+            ->filter(fn (array $item) => $this->matchesAdvisorBonus($item['development'], $request->input('advisor_bonus')))
+            ->filter(fn (array $item) => $this->matchesAmenities($item['development'], $request->input('amenities', [])))
+            ->filter(fn (array $item) => $this->matchesRange($this->detailNumber($item['product'], 'construction_m2'), $request->input('construction_m2_min'), $request->input('construction_m2_max')))
+            ->filter(fn (array $item) => $this->matchesRange($this->detailNumber($item['product'], 'land_m2'), $request->input('land_m2_min'), $request->input('land_m2_max')))
             ->values();
     }
 
@@ -122,24 +137,24 @@ class AdvisorDevelopmentCatalogController extends Controller
         return true;
     }
 
-    private function matchesBedrooms(Development $development, mixed $value): bool
+    private function matchesBedrooms(array $product, mixed $value): bool
     {
         if (blank($value)) {
             return true;
         }
 
-        $bedrooms = $this->detailNumber($development, 'bedrooms');
+        $bedrooms = $this->detailNumber($product, 'bedrooms');
 
         return $value === '4' ? $bedrooms >= 4 : $bedrooms === (float) $value;
     }
 
-    private function matchesBathrooms(Development $development, mixed $value): bool
+    private function matchesBathrooms(array $product, mixed $value): bool
     {
         if (blank($value)) {
             return true;
         }
 
-        $bathrooms = $this->detailNumber($development, 'full_bathrooms') ?? $this->detailNumber($development, 'bathrooms');
+        $bathrooms = $this->detailNumber($product, 'full_bathrooms') ?? $this->detailNumber($product, 'bathrooms');
 
         return $value === '4' ? $bathrooms >= 4 : $bathrooms === (float) $value;
     }
@@ -188,11 +203,26 @@ class AdvisorDevelopmentCatalogController extends Controller
             ->every(fn (string $amenity) => $developmentAmenities->contains($amenity));
     }
 
-    private function detailNumber(Development $development, string $key): ?float
+    private function detailNumber(array $product, string $key): ?float
     {
-        $value = $development->property_details[$key] ?? null;
+        $value = $product[$key] ?? null;
 
         return is_numeric($value) ? (float) $value : null;
+    }
+
+    private function selectedComparisonKeys(Request $request): array
+    {
+        return collect($request->session()->get(DevelopmentComparisonController::sessionKey(), []))
+            ->map(fn ($key) => is_numeric($key) ? ((int) $key).':0' : (string) $key)
+            ->filter(fn (string $key) => preg_match('/^\d+:\d+$/', $key))
+            ->map(function (string $key) {
+                [$developmentId, $productIndex] = array_map('intval', explode(':', $key, 2));
+
+                return Development::makeComparisonSelectionKey($developmentId, $productIndex);
+            })
+            ->unique()
+            ->values()
+            ->all();
     }
 
     private function arrayFilter(array|string|null $value): array
