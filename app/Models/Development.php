@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -92,6 +93,77 @@ class Development extends Model
     public function developerName(): string
     {
         return $this->developerProfile?->commercial_name ?: ($this->developer ?: 'Sin desarrolladora');
+    }
+
+    public function productDetailsItems(): array
+    {
+        return self::productDetailsItemsFrom($this->property_details ?? [], $this->name);
+    }
+
+    public static function productDetailsItemsFrom(mixed $details, ?string $fallbackName = null): array
+    {
+        if (! is_array($details) || $details === []) {
+            return [];
+        }
+
+        if (isset($details['products']) && is_array($details['products'])) {
+            $details = $details['products'];
+        }
+
+        $items = array_is_list($details) ? $details : [$details];
+
+        return collect($items)
+            ->filter(fn ($item) => is_array($item))
+            ->values()
+            ->map(function (array $item, int $index) use ($fallbackName) {
+                if (isset($item['details']) && is_array($item['details'])) {
+                    $item = array_merge($item['details'], Arr::except($item, ['details']));
+                }
+
+                if (! array_key_exists('product_name', $item) && array_key_exists('name', $item)) {
+                    $item['product_name'] = $item['name'];
+                }
+
+                $normalized = collect($item)
+                    ->mapWithKeys(fn ($value, $key) => [(string) $key => is_string($value) ? trim($value) : $value])
+                    ->reject(fn ($value) => $value === null || $value === '')
+                    ->all();
+
+                if ($normalized === []) {
+                    return null;
+                }
+
+                $normalized['product_name'] = $normalized['product_name']
+                    ?? $fallbackName
+                    ?? 'Producto '.($index + 1);
+
+                return $normalized;
+            })
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    public function productDetailsAt(int $index): array
+    {
+        return $this->productDetailsItems()[$index] ?? [];
+    }
+
+    public function productNameAt(int $index): string
+    {
+        $product = $this->productDetailsAt($index);
+
+        return (string) ($product['product_name'] ?? 'Producto '.($index + 1));
+    }
+
+    public function comparisonSelectionKey(int $productIndex): string
+    {
+        return self::makeComparisonSelectionKey($this->id, $productIndex);
+    }
+
+    public static function makeComparisonSelectionKey(int|string $developmentId, int|string $productIndex): string
+    {
+        return (int) $developmentId.':'.max(0, (int) $productIndex);
     }
 
     public function ensureDocumentShareToken(): string

@@ -8,7 +8,7 @@
             Comparador de propiedades
         </h1>
         <ul class="breadcrumb breadcrumb-separatorless fw-semibold fs-7 my-0 pt-1">
-            <li class="breadcrumb-item text-muted">{{ $selectedCount }} de {{ $comparisonMax }} propiedades seleccionadas</li>
+            <li class="breadcrumb-item text-muted">{{ $selectedCount }} de {{ $comparisonMax }} productos seleccionados</li>
         </ul>
     </div>
     <div class="d-flex gap-3">
@@ -132,7 +132,7 @@
                 <div>
                     <h3 class="fw-bold text-gray-900 mb-1">Comparador de propiedades</h3>
                     <div class="text-muted fw-semibold fs-7">
-                        {{ $selectedCount }} de {{ $comparisonMax }} propiedades
+                        {{ $selectedCount }} de {{ $comparisonMax }} productos
                         @if ($selectedCount > 0 && $selectedCount < $comparisonMin)
                             · selecciona al menos {{ $comparisonMin }} para comparar mejor
                         @endif
@@ -141,18 +141,18 @@
                 <div class="d-flex gap-3">
                     <a href="{{ route('admin.advisor-catalog.index') }}" class="btn btn-light-primary">
                         <i class="ki-outline ki-plus fs-2"></i>
-                        Agregar desarrollos
+                        Agregar productos
                     </a>
                 </div>
             </div>
         </div>
 
-        @if ($developments->isEmpty())
+        @if ($comparisonItems->isEmpty())
             <div class="card card-flush">
                 <div class="card-body text-center py-15">
                     <i class="ki-outline ki-switch fs-3x text-gray-400 mb-4"></i>
-                    <div class="fw-bold fs-3 text-gray-900">Sin desarrollos seleccionados.</div>
-                    <div class="text-muted fw-semibold mt-2">Marca entre {{ $comparisonMin }} y {{ $comparisonMax }} desarrollos desde el catalogo.</div>
+                    <div class="fw-bold fs-3 text-gray-900">Sin productos seleccionados.</div>
+                    <div class="text-muted fw-semibold mt-2">Marca entre {{ $comparisonMin }} y {{ $comparisonMax }} productos desde el catalogo.</div>
                     <a href="{{ route('admin.advisor-catalog.index') }}" class="btn btn-primary mt-6">
                         Ir al catalogo
                     </a>
@@ -166,7 +166,13 @@
                             <thead>
                                 <tr class="fw-bold text-gray-900 bg-light">
                                     <th class="comparison-feature-col ps-6">Caracteristica</th>
-                                    @foreach ($developments as $development)
+                                    @foreach ($comparisonItems as $item)
+                                        @php
+                                            $development = $item['development'];
+                                            $product = $item['product'];
+                                            $selectionKey = $item['key'];
+                                            $productName = $product['product_name'] ?? 'Producto ' . ($item['product_index'] + 1);
+                                        @endphp
                                         <th>
                                             <div class="d-flex align-items-start justify-content-between gap-4 py-2">
                                                 <div class="d-flex align-items-center gap-3 min-w-0">
@@ -179,12 +185,13 @@
                                                     @endif
                                                     <div class="min-w-0">
                                                         <a href="{{ route('admin.developments.show', $development) }}" class="text-gray-900 text-hover-primary fw-bold text-truncate d-block">
-                                                            {{ $development->name }}
+                                                            {{ $productName }}
                                                         </a>
-                                                        <div class="text-muted fs-8 text-truncate">{{ $development->developerName() }}</div>
+                                                        <div class="text-muted fs-8 text-truncate">{{ $development->name }}</div>
+                                                        <div class="text-muted fs-9 text-truncate">{{ $development->developerName() }}</div>
                                                     </div>
                                                 </div>
-                                                <form method="POST" action="{{ route('admin.development-comparison.selection.remove', $development) }}">
+                                                <form method="POST" action="{{ route('admin.development-comparison.selection.remove', $selectionKey) }}">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="btn btn-icon btn-sm btn-light-danger comparison-remove" title="Quitar">
@@ -201,7 +208,7 @@
                                     @if ($section['title'])
                                         <tr class="comparison-section-row">
                                             <td class="comparison-feature-col ps-6 fw-bold text-gray-900">{{ $section['title'] }}</td>
-                                            @foreach ($developments as $development)
+                                            @foreach ($comparisonItems as $item)
                                                 <td class="bg-light"></td>
                                             @endforeach
                                         </tr>
@@ -213,8 +220,8 @@
                                             'comparison-commission-row' => $row['variant'] === 'commission',
                                         ])>
                                             <td class="comparison-feature-col ps-6 fw-bold text-gray-800">{{ $row['label'] }}</td>
-                                            @foreach ($developments as $development)
-                                                @php($value = $row['values'][$development->id] ?? '-')
+                                            @foreach ($comparisonItems as $item)
+                                                @php($value = $row['values'][$item['key']] ?? '-')
                                                 <td @class([
                                                     'fw-bold text-primary fs-4' => $row['variant'] === 'price',
                                                     'fw-bold text-success fs-4' => $row['variant'] === 'commission',

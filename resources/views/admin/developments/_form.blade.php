@@ -1,5 +1,7 @@
 @php
     $details = old('property_details', $development->property_details ?? []);
+    $productDetails = \App\Models\Development::productDetailsItemsFrom($details, $development->name);
+    $productDetails = $productDetails === [] ? [['product_name' => '']] : $productDetails;
     $selectedType = old('property_type', $development->property_type ?: 'casa');
     $selectedStatus = old('status', $development->status ?: 'preventa');
     $selectedDeveloperProfile = old('developer_profile_id', $development->developer_profile_id);
@@ -7,7 +9,6 @@
     $selectedAmenities = is_array($selectedAmenities)
         ? $selectedAmenities
         : collect(preg_split('/[\r\n,]+/', (string) $selectedAmenities))->map(fn ($item) => trim($item))->filter()->values()->all();
-    $detailValue = fn (string $key) => old('property_details.' . $key, $details[$key] ?? '');
     $normalizeSelectValue = function ($value) {
         if (is_bool($value)) {
             return $value ? 'si' : 'no';
@@ -19,8 +20,8 @@
             ->replace([' ', '-'], '_')
             ->value();
     };
-    $isSelectedOption = function (string $key, string $optionValue, string $optionLabel) use ($detailValue, $normalizeSelectValue) {
-        $currentValue = $normalizeSelectValue($detailValue($key));
+    $isSelectedProductOption = function (array $product, string $key, string $optionValue, string $optionLabel) use ($normalizeSelectValue) {
+        $currentValue = $normalizeSelectValue($product[$key] ?? '');
 
         return $currentValue !== ''
             && in_array($currentValue, [
@@ -203,6 +204,12 @@
         .tox-tinymce {
             border-color: var(--bs-gray-300) !important;
             border-radius: .75rem !important;
+        }
+
+        .development-product-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
         }
     </style>
 @endpush
@@ -493,6 +500,12 @@
                 <div class="card-title">
                     <h3 class="fw-bold mb-0">Datos del producto</h3>
                 </div>
+                <div class="card-toolbar">
+                    <button type="button" class="btn btn-sm btn-light-primary" data-product-add-active>
+                        <i class="ki-outline ki-plus fs-3"></i>
+                        Agregar producto
+                    </button>
+                </div>
             </div>
             <div class="card-body">
                 @foreach ($sections as $type => $section)
@@ -500,65 +513,57 @@
                         $appliesTo = $section['applies_to'] ?? [$type];
                         $isActiveSection = in_array($selectedType, $appliesTo, true);
                     @endphp
-                    <div data-development-section="{{ implode(' ', $appliesTo) }}" @class(['d-none' => ! $isActiveSection])>
-                        <div class="d-flex align-items-center mb-6">
-                            <div class="symbol symbol-45px me-4">
-                                <div class="symbol-label bg-light-primary">
-                                    <i class="ki-outline {{ $typeIcons[$type] ?? 'ki-category' }} fs-2 text-primary"></i>
+                    <div data-development-section="{{ implode(' ', $appliesTo) }}"
+                        data-product-section data-product-section-type="{{ $type }}"
+                        @class(['d-none' => ! $isActiveSection])>
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-4 mb-6">
+                            <div class="d-flex align-items-center">
+                                <div class="symbol symbol-45px me-4">
+                                    <div class="symbol-label bg-light-primary">
+                                        <i class="ki-outline {{ $typeIcons[$type] ?? 'ki-category' }} fs-2 text-primary"></i>
+                                    </div>
                                 </div>
-                            </div>
-                            <div>
-                                <div class="fw-bold fs-4 text-gray-900">{{ $section['title'] }}</div>
-                                <div class="text-muted fw-semibold fs-7">Campos especificos del tipo seleccionado</div>
+                                <div>
+                                    <div class="fw-bold fs-4 text-gray-900">{{ $section['title'] }}</div>
+                                    <div class="text-muted fw-semibold fs-7">Campos especificos del tipo seleccionado</div>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="row g-6">
-                            @foreach ($section['fields'] as $field)
-                                @php
-                                    $fieldName = 'property_details[' . $field['name'] . ']';
-                                    $fieldId = 'property_details_' . $type . '_' . $field['name'];
-                                    $isRequired = $field['required'] ?? false;
-                                    $colClass = $field['cols'] ?? 'col-md-6 col-xl-4';
-                                @endphp
-
-                                <div class="{{ $colClass }}">
-                                    <label @class(['form-label', 'required' => $isRequired]) for="{{ $fieldId }}">
-                                        {{ $field['label'] }}
-                                    </label>
-
-                                    @if ($field['type'] === 'select')
-                                        <select id="{{ $fieldId }}" name="{{ $fieldName }}"
-                                            class="form-select form-select-solid @error('property_details.' . $field['name']) is-invalid @enderror"
-                                            data-detail-input data-detail-required="{{ $isRequired ? '1' : '0' }}"
-                                            @disabled(! $isActiveSection) @required($isActiveSection && $isRequired)>
-                                            <option value="">Seleccionar</option>
-                                            @foreach ($field['options'] as $optionValue => $optionLabel)
-                                                <option value="{{ $optionValue }}" @selected($isSelectedOption($field['name'], (string) $optionValue, (string) $optionLabel))>
-                                                    {{ $optionLabel }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    @elseif ($field['type'] === 'textarea')
-                                        <textarea id="{{ $fieldId }}" name="{{ $fieldName }}" rows="3"
-                                            class="form-control form-control-solid @error('property_details.' . $field['name']) is-invalid @enderror"
-                                            data-detail-input data-detail-required="{{ $isRequired ? '1' : '0' }}"
-                                            @disabled(! $isActiveSection) @required($isActiveSection && $isRequired)>{{ $detailValue($field['name']) }}</textarea>
-                                    @else
-                                        <input id="{{ $fieldId }}" type="{{ $field['type'] }}" name="{{ $fieldName }}"
-                                            value="{{ $detailValue($field['name']) }}"
-                                            class="form-control form-control-solid @error('property_details.' . $field['name']) is-invalid @enderror"
-                                            min="0" step="{{ $field['step'] ?? '1' }}"
-                                            data-detail-input data-detail-required="{{ $isRequired ? '1' : '0' }}"
-                                            @disabled(! $isActiveSection) @required($isActiveSection && $isRequired)>
-                                    @endif
-
-                                    @error('property_details.' . $field['name'])
-                                        <div class="invalid-feedback d-block">{{ $message }}</div>
-                                    @enderror
-                                </div>
+                        <div class="development-product-list" data-product-list>
+                            @foreach ($productDetails as $productIndex => $product)
+                                @include('admin.developments._product_details_item', [
+                                    'index' => $productIndex,
+                                    'product' => $product,
+                                    'type' => $type,
+                                    'section' => $section,
+                                    'isActiveSection' => $isActiveSection,
+                                    'isSelectedProductOption' => $isSelectedProductOption,
+                                ])
                             @endforeach
                         </div>
+
+                        <div class="text-muted fw-semibold text-center py-8 d-none" data-product-empty>
+                            Sin productos capturados para este tipo.
+                        </div>
+
+                        <div class="mt-5">
+                            <button type="button" class="btn btn-sm btn-light-primary" data-product-add>
+                                <i class="ki-outline ki-plus fs-3"></i>
+                                Agregar producto
+                            </button>
+                        </div>
+
+                        <template data-product-template>
+                            @include('admin.developments._product_details_item', [
+                                'index' => '__INDEX__',
+                                'product' => [],
+                                'type' => $type,
+                                'section' => $section,
+                                'isActiveSection' => $isActiveSection,
+                                'isSelectedProductOption' => $isSelectedProductOption,
+                            ])
+                        </template>
                     </div>
                 @endforeach
             </div>
@@ -675,6 +680,7 @@
             var typeInputs = form.querySelectorAll('input[name="property_type"]');
             var uploadZones = form.querySelectorAll('[data-upload-zone]');
             var amenitiesSelect = form.querySelector('[data-development-amenities]');
+            var addActiveProductButton = form.querySelector('[data-product-add-active]');
 
             if (window.jQuery && jQuery.fn.select2 && amenitiesSelect) {
                 jQuery(amenitiesSelect).select2({
@@ -690,18 +696,104 @@
                 });
             }
 
+            function activeType() {
+                var checkedType = form.querySelector('input[name="property_type"]:checked');
+
+                return checkedType ? checkedType.value : null;
+            }
+
+            function syncProductSection(section, isActive) {
+                var type = section.getAttribute('data-product-section-type');
+                var items = Array.prototype.slice.call(section.querySelectorAll('[data-product-item]'));
+                var emptyState = section.querySelector('[data-product-empty]');
+
+                items.forEach(function (item, index) {
+                    item.querySelectorAll('[data-product-field]').forEach(function (input) {
+                        var field = input.getAttribute('data-product-field');
+                        var inputId = 'property_details_' + type + '_' + index + '_' + field;
+                        input.name = 'property_details[' + index + '][' + field + ']';
+                        input.id = inputId;
+                        input.disabled = !isActive;
+                        input.required = isActive && input.getAttribute('data-product-required') === '1';
+
+                        var label = item.querySelector('[data-product-label-for="' + field + '"]');
+
+                        if (label) {
+                            label.setAttribute('for', inputId);
+                        }
+                    });
+
+                    var nameInput = item.querySelector('[data-product-field="product_name"]');
+                    var title = item.querySelector('[data-product-title]');
+
+                    if (title) {
+                        title.textContent = (nameInput?.value || '').trim() || 'Producto ' + (index + 1);
+                    }
+                });
+
+                if (emptyState) {
+                    emptyState.classList.toggle('d-none', items.length > 0);
+                }
+            }
+
+            function sectionMatchesType(section, type) {
+                return section.getAttribute('data-development-section').split(' ').indexOf(type) !== -1;
+            }
+
             function setActiveType(type) {
                 sections.forEach(function (section) {
-                    var sectionTypes = section.getAttribute('data-development-section').split(' ');
-                    var isActive = sectionTypes.indexOf(type) !== -1;
+                    var isActive = sectionMatchesType(section, type);
                     section.classList.toggle('d-none', !isActive);
-
-                    section.querySelectorAll('[data-detail-input]').forEach(function (input) {
-                        input.disabled = !isActive;
-                        input.required = isActive && input.getAttribute('data-detail-required') === '1';
-                    });
+                    syncProductSection(section, isActive);
                 });
             }
+
+            function addProduct(section) {
+                var template = section?.querySelector('[data-product-template]');
+                var list = section?.querySelector('[data-product-list]');
+
+                if (!template || !list) {
+                    return;
+                }
+
+                list.appendChild(template.content.firstElementChild.cloneNode(true));
+                setActiveType(activeType());
+            }
+
+            form.addEventListener('click', function (event) {
+                var removeButton = event.target.closest('[data-product-remove]');
+                var addButton = event.target.closest('[data-product-add]');
+
+                if (removeButton) {
+                    var section = removeButton.closest('[data-development-section]');
+                    removeButton.closest('[data-product-item]')?.remove();
+                    setActiveType(activeType());
+                    return;
+                }
+
+                if (addButton) {
+                    addProduct(addButton.closest('[data-development-section]'));
+                }
+            });
+
+            form.addEventListener('input', function (event) {
+                if (!event.target.matches('[data-product-field="product_name"]')) {
+                    return;
+                }
+
+                var section = event.target.closest('[data-development-section]');
+                syncProductSection(section, sectionMatchesType(section, activeType()));
+            });
+
+            addActiveProductButton?.addEventListener('click', function () {
+                var type = activeType();
+                var activeSection = Array.prototype.slice.call(sections)
+                    .find(function (section) {
+                        return sectionMatchesType(section, type);
+                    });
+
+                addProduct(activeSection);
+            });
 
             typeInputs.forEach(function (input) {
                 input.addEventListener('change', function () {

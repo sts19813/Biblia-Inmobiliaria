@@ -62,7 +62,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('comparador-desarrollos', [DevelopmentComparisonController::class, 'index'])->name('development-comparison.index');
     Route::post('comparador-desarrollos/seleccion', [DevelopmentComparisonController::class, 'updateSelection'])->name('development-comparison.selection.update');
     Route::delete('comparador-desarrollos/seleccion', [DevelopmentComparisonController::class, 'clear'])->name('development-comparison.selection.clear');
-    Route::delete('comparador-desarrollos/seleccion/{development}', [DevelopmentComparisonController::class, 'remove'])->name('development-comparison.selection.remove');
+    Route::delete('comparador-desarrollos/seleccion/{selection}', [DevelopmentComparisonController::class, 'remove'])->name('development-comparison.selection.remove');
     Route::get('desarrollos', [DevelopmentController::class, 'index'])->name('developments.index');
     Route::get('desarrollos/crear', [DevelopmentController::class, 'create'])->name('developments.create');
     Route::post('desarrollos', [DevelopmentController::class, 'store'])->name('developments.store');

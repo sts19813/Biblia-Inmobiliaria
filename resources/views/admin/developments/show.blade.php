@@ -210,19 +210,40 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    @if (! empty($detailFields))
-                        <div class="row g-6">
-                            @foreach ($detailFields as $key)
-                                @php
-                                    $hasValue = array_key_exists($key, $development->property_details ?? [])
-                                        && $development->property_details[$key] !== ''
-                                        && $development->property_details[$key] !== null;
-                                    $value = $hasValue ? $development->property_details[$key] : null;
-                                @endphp
-                                <div class="col-md-6 col-xl-4">
-                                    <div class="text-muted fw-semibold fs-7 mb-1">{{ $detailLabels[$key] ?? $formatValue($key) }}</div>
-                                    <div @class(['fw-bold', 'text-gray-900' => $hasValue, 'text-muted' => ! $hasValue])>
-                                        {{ $hasValue ? $formatDetailValue($key, $value) : 'No capturado' }}
+                    @if (! empty($productDetails) && ! empty($detailFields))
+                        <div class="d-flex flex-column gap-8">
+                            @foreach ($productDetails as $productIndex => $product)
+                                <div>
+                                    <div class="d-flex align-items-center mb-5">
+                                        <div class="symbol symbol-40px me-3">
+                                            <div class="symbol-label bg-light-primary">
+                                                <i class="ki-outline ki-home-2 fs-2 text-primary"></i>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold fs-4 text-gray-900">
+                                                {{ $product['product_name'] ?? 'Producto ' . ($productIndex + 1) }}
+                                            </div>
+                                            <div class="text-muted fw-semibold fs-8">Producto {{ $productIndex + 1 }}</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row g-6">
+                                        @foreach ($detailFields as $key)
+                                            @continue($key === 'product_name')
+                                            @php
+                                                $hasValue = array_key_exists($key, $product)
+                                                    && $product[$key] !== ''
+                                                    && $product[$key] !== null;
+                                                $value = $hasValue ? $product[$key] : null;
+                                            @endphp
+                                            <div class="col-md-6 col-xl-4">
+                                                <div class="text-muted fw-semibold fs-7 mb-1">{{ $detailLabels[$key] ?? $formatValue($key) }}</div>
+                                                <div @class(['fw-bold', 'text-gray-900' => $hasValue, 'text-muted' => ! $hasValue])>
+                                                    {{ $hasValue ? $formatDetailValue($key, $value) : 'No capturado' }}
+                                                </div>
+                                            </div>
+                                        @endforeach
                                     </div>
                                 </div>
                             @endforeach

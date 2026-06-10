@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Amenity;
-use App\Models\Development;
 use App\Models\DeveloperProfile;
+use App\Models\Development;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -32,6 +32,7 @@ class DevelopmentController extends Controller
     ];
 
     public const DETAIL_LABELS = [
+        'product_name' => 'Nombre del producto',
         'construction_m2' => 'm2 de construccion',
         'land_m2' => 'm2 de terreno',
         'front_m' => 'Frente (m)',
@@ -77,27 +78,32 @@ class DevelopmentController extends Controller
 
     public const DETAIL_FIELD_GROUPS = [
         'casa' => [
+            'product_name',
             'construction_m2', 'land_m2', 'front_m', 'depth_m', 'levels', 'bedrooms', 'full_bathrooms',
             'half_bathrooms', 'parking_spaces', 'ground_floor_bedroom', 'street_type', 'equipment',
             'orientation', 'service_room', 'pool', 'family_room', 'solar_panel_preparation',
             'ev_charger_preparation',
         ],
         'departamento' => [
+            'product_name',
             'construction_m2', 'floor_level', 'bedrooms', 'full_bathrooms', 'half_bathrooms',
             'parking_spaces', 'storage', 'security_24_7', 'orientation', 'equipment', 'balcony',
             'building_floors', 'elevator', 'elevators_count', 'pool', 'trash_chute',
             'covered_parking', 'solar_panel_preparation', 'ev_charger_preparation',
         ],
         'playa' => [
+            'product_name',
             'construction_m2', 'bedrooms', 'full_bathrooms', 'half_bathrooms', 'parking_spaces',
             'ocean_view', 'vacation_rental_program', 'estimated_yield', 'primary_bedroom_ocean_view',
             'elevator', 'rooftop', 'water_supply', 'sea_access', 'service_room', 'equipment',
         ],
         'terreno' => [
+            'product_name',
             'land_m2', 'front_m', 'depth_m', 'land_use', 'available_services',
             'construction_restrictions', 'street_type', 'orientation',
         ],
         'comercial' => [
+            'product_name',
             'construction_m2', 'front_m', 'depth_m', 'bathrooms', 'parking_spaces', 'permitted_use',
             'rent_option', 'delivery_condition', 'building_floors', 'elevator', 'elevators_count',
             'orientation',
@@ -161,6 +167,7 @@ class DevelopmentController extends Controller
             'statuses' => self::STATUSES,
             'detailLabels' => self::DETAIL_LABELS,
             'detailFields' => $this->detailFieldsFor($development->property_type),
+            'productDetails' => $development->productDetailsItems(),
         ]);
     }
 
@@ -231,10 +238,12 @@ class DevelopmentController extends Controller
             'total_units' => ['nullable', 'integer', 'min:0'],
             'maintenance_fee' => ['nullable', 'numeric', 'min:0'],
             'property_details' => ['nullable', 'array'],
+            'property_details.*' => ['array'],
+            'property_details.*.product_name' => ['nullable', 'string', 'max:255'],
         ];
 
         foreach ($this->detailRules($request->input('property_type')) as $field => $fieldRules) {
-            $rules["property_details.$field"] = $fieldRules;
+            $rules["property_details.*.$field"] = $this->optionalDetailRules($fieldRules);
         }
 
         $data = $request->validate($rules);
@@ -341,10 +350,45 @@ class DevelopmentController extends Controller
 
     private function normalizeDetails(string $propertyType, array $details): array
     {
-        return collect($details)
-            ->only($this->detailFieldsFor($propertyType))
-            ->filter(fn ($value) => $value !== null && $value !== '')
+        $allowedFields = $this->detailFieldsFor($propertyType);
+        $products = Development::productDetailsItemsFrom($details);
+
+        return collect($products)
+            ->map(function (array $product, int $index) use ($allowedFields) {
+                $normalized = collect($product)
+                    ->only($allowedFields)
+                    ->map(fn ($value) => is_string($value) ? trim($value) : $value)
+                    ->reject(fn ($value) => $value === null || $value === '')
+                    ->all();
+
+                if ($normalized === []) {
+                    return null;
+                }
+
+                $normalized['product_name'] = $normalized['product_name'] ?? 'Producto '.($index + 1);
+
+                return $normalized;
+            })
+            ->filter()
+            ->values()
             ->all();
+    }
+
+    private function optionalDetailRules(array $fieldRules): array
+    {
+        $rules = collect($fieldRules)
+            ->reject(fn ($rule) => is_string($rule) && str_starts_with($rule, 'required'))
+            ->values()
+            ->all();
+
+        $hasNullableRule = collect($rules)
+            ->contains(fn ($rule) => is_string($rule) && in_array($rule, ['nullable', 'sometimes'], true));
+
+        if (! $hasNullableRule) {
+            array_unshift($rules, 'nullable');
+        }
+
+        return $rules;
     }
 
     private function amenitiesToArray(array $value): array

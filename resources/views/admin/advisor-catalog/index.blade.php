@@ -8,7 +8,7 @@
         'obra_iniciada' => 'badge-light-warning',
         'entrega_inmediata' => 'badge-light-success',
     ];
-    $detail = fn ($development, string $key, $fallback = '-') => $development->property_details[$key] ?? $fallback;
+    $detail = fn (array $product, string $key, $fallback = '-') => $product[$key] ?? $fallback;
 @endphp
 
 @section('title', 'Catalogo de desarrollos | Biblia Inmobiliaria')
@@ -267,15 +267,15 @@
                     <div class="card-header align-items-center py-5 gap-3">
                         <div class="card-title">
                             <div>
-                                <h3 class="fw-bold text-gray-900 mb-1">Mostrando {{ $developments->total() }} desarrollos</h3>
-                                <div class="text-muted fw-semibold fs-7">De {{ $totalDevelopments }} desarrollos disponibles en sistema.</div>
+                                <h3 class="fw-bold text-gray-900 mb-1">Mostrando {{ $catalogItems->total() }} productos</h3>
+                                <div class="text-muted fw-semibold fs-7">De {{ $totalProducts }} productos en {{ $totalDevelopments }} desarrollos.</div>
                             </div>
                         </div>
                         <div class="card-toolbar">
                             <div class="d-flex flex-wrap align-items-center justify-content-end gap-3">
                                 <div class="advisor-comparison-bar d-flex align-items-center gap-3">
                                     <span class="badge badge-light-primary" data-comparison-counter>
-                                        {{ count($selectedComparisonIds) }} / {{ $comparisonMax }}
+                                        {{ count($selectedComparisonKeys) }} / {{ $comparisonMax }}
                                     </span>
                                     <span class="text-gray-700 fw-semibold fs-7">
                                         Selecciona de {{ $comparisonMin }} a {{ $comparisonMax }}
@@ -283,10 +283,10 @@
                                     <a href="{{ route('admin.development-comparison.index') }}"
                                         @class([
                                             'btn btn-sm btn-primary',
-                                            'disabled' => count($selectedComparisonIds) < $comparisonMin,
+                                            'disabled' => count($selectedComparisonKeys) < $comparisonMin,
                                         ])
                                         data-comparison-link
-                                        @if (count($selectedComparisonIds) < $comparisonMin) aria-disabled="true" @endif>
+                                        @if (count($selectedComparisonKeys) < $comparisonMin) aria-disabled="true" @endif>
                                         Comparar
                                     </a>
                                 </div>
@@ -304,7 +304,7 @@
                                 <thead>
                                     <tr class="text-start text-gray-700 fw-bold fs-8 text-uppercase gs-0">
                                         <th class="advisor-select-col text-center"></th>
-                                        <th class="advisor-development-col">Desarrollo</th>
+                                        <th class="advisor-development-col">Producto / desarrollo</th>
                                         <th>Ubicacion</th>
                                         <th>Precio desde</th>
                                         <th>Fecha entrega</th>
@@ -329,18 +329,22 @@
                                     </tr>
                                 </thead>
                                 <tbody class="fw-semibold text-gray-700">
-                                    @forelse ($developments as $development)
+                                    @forelse ($catalogItems as $item)
                                         @php
-                                            $fullBathrooms = $detail($development, 'full_bathrooms', $detail($development, 'bathrooms'));
+                                            $development = $item['development'];
+                                            $product = $item['product'];
+                                            $selectionKey = $item['key'];
+                                            $productName = $product['product_name'] ?? 'Producto ' . ($item['product_index'] + 1);
+                                            $fullBathrooms = $detail($product, 'full_bathrooms', $detail($product, 'bathrooms'));
                                             $documentsCount = $development->documentFolders->sum(fn ($folder) => $folder->files->count());
                                         @endphp
                                         <tr>
                                             <td class="advisor-select-col text-center">
                                                 <label class="form-check form-check-custom form-check-solid justify-content-center advisor-comparison-check">
                                                     <input class="form-check-input" type="checkbox"
-                                                        value="{{ $development->id }}"
+                                                        value="{{ $selectionKey }}"
                                                         data-comparison-checkbox
-                                                        @checked(in_array($development->id, $selectedComparisonIds, true))>
+                                                        @checked(in_array($selectionKey, $selectedComparisonKeys, true))>
                                                 </label>
                                             </td>
                                             <td class="advisor-development-col">
@@ -354,23 +358,24 @@
                                                     @endif
                                                     <div>
                                                         <a href="{{ route('admin.developments.show', $development) }}" class="fw-bold text-gray-900 text-hover-primary">
-                                                            {{ $development->name }}
+                                                            {{ $productName }}
                                                         </a>
-                                                        <div class="text-muted fs-8">{{ $development->developerName() }}</div>
+                                                        <div class="text-muted fs-8">{{ $development->name }}</div>
+                                                        <div class="text-muted fs-9">{{ $development->developerName() }}</div>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td>{{ $development->zone }}<div class="text-muted fs-8">{{ $development->city }}</div></td>
                                             <td class="fw-bold text-gray-900">${{ number_format((float) $development->price_from, 0) }}</td>
                                             <td>{{ $development->delivery_date?->format('M Y') }}</td>
-                                            <td>{{ $detail($development, 'construction_m2') !== '-' ? $detail($development, 'construction_m2') . ' m2' : '-' }}</td>
-                                            <td>{{ $detail($development, 'land_m2') !== '-' ? $detail($development, 'land_m2') . ' m2' : '-' }}</td>
-                                            <td>{{ $detail($development, 'front_m') !== '-' && $detail($development, 'depth_m') !== '-' ? $detail($development, 'front_m') . ' x ' . $detail($development, 'depth_m') : '-' }}</td>
-                                            <td>{{ $detail($development, 'bedrooms') }}</td>
+                                            <td>{{ $detail($product, 'construction_m2') !== '-' ? $detail($product, 'construction_m2') . ' m2' : '-' }}</td>
+                                            <td>{{ $detail($product, 'land_m2') !== '-' ? $detail($product, 'land_m2') . ' m2' : '-' }}</td>
+                                            <td>{{ $detail($product, 'front_m') !== '-' && $detail($product, 'depth_m') !== '-' ? $detail($product, 'front_m') . ' x ' . $detail($product, 'depth_m') : '-' }}</td>
+                                            <td>{{ $detail($product, 'bedrooms') }}</td>
                                             <td>{{ $fullBathrooms }}</td>
-                                            <td>{{ $detail($development, 'half_bathrooms') }}</td>
-                                            <td>{{ $detail($development, 'parking_spaces') }}</td>
-                                            <td>{{ $detail($development, 'levels', $detail($development, 'building_floors')) }}</td>
+                                            <td>{{ $detail($product, 'half_bathrooms') }}</td>
+                                            <td>{{ $detail($product, 'parking_spaces') }}</td>
+                                            <td>{{ $detail($product, 'levels', $detail($product, 'building_floors')) }}</td>
                                             <td class="mw-175px">{{ $development->payment_methods }}</td>
                                             <td>
                                                 <span class="badge {{ $statusClasses[$development->status] ?? 'badge-light' }}">
@@ -402,7 +407,7 @@
                                         <tr>
                                             <td colspan="23" class="text-center py-12">
                                                 <i class="ki-outline ki-magnifier fs-3x text-gray-400 mb-4"></i>
-                                                <div class="fw-bold fs-4 text-gray-900">Sin desarrollos encontrados.</div>
+                                                <div class="fw-bold fs-4 text-gray-900">Sin productos encontrados.</div>
                                                 <div class="text-muted fw-semibold">Ajusta los filtros para ampliar la busqueda.</div>
                                             </td>
                                         </tr>
@@ -412,7 +417,7 @@
                         </div>
 
                         <div class="d-flex justify-content-end pt-6">
-                            {{ $developments->links() }}
+                            {{ $catalogItems->links() }}
                         </div>
                     </div>
                 </div>
@@ -429,14 +434,14 @@
             var table = document.querySelector('[data-advisor-catalog-table]');
             var search = document.querySelector('[data-advisor-table-search]');
             var comparisonConfig = {
-                selectedIds: @json($selectedComparisonIds),
+                selectedItems: @json($selectedComparisonKeys),
                 min: {{ $comparisonMin }},
                 max: {{ $comparisonMax }},
                 updateUrl: @json(route('admin.development-comparison.selection.update')),
                 compareUrl: @json(route('admin.development-comparison.index')),
                 csrf: @json(csrf_token()),
             };
-            var comparisonSelected = new Set(comparisonConfig.selectedIds.map(String));
+            var comparisonSelected = new Set(comparisonConfig.selectedItems.map(String));
             var comparisonCounter = document.querySelector('[data-comparison-counter]');
             var comparisonLink = document.querySelector('[data-comparison-link]');
             var comparisonCheckboxes = Array.prototype.slice.call(document.querySelectorAll('[data-comparison-checkbox]'));
@@ -510,7 +515,7 @@
                         'X-CSRF-TOKEN': comparisonConfig.csrf,
                     },
                     body: JSON.stringify({
-                        development_ids: Array.from(comparisonSelected),
+                        comparison_items: Array.from(comparisonSelected),
                     }),
                 }).then(function (response) {
                     if (!response.ok) {
@@ -519,7 +524,7 @@
 
                     return response.json();
                 }).then(function (payload) {
-                    comparisonSelected = new Set((payload.ids || []).map(String));
+                    comparisonSelected = new Set((payload.items || payload.ids || []).map(String));
                     syncComparisonUi();
                 }).catch(function (error) {
                     comparisonSelected = previousSelected;
@@ -536,7 +541,7 @@
                     if (checkbox.checked) {
                         if (!comparisonSelected.has(id) && comparisonSelected.size >= comparisonConfig.max) {
                             checkbox.checked = false;
-                            alert('Solo puedes comparar hasta ' + comparisonConfig.max + ' desarrollos.');
+                            alert('Solo puedes comparar hasta ' + comparisonConfig.max + ' productos.');
                             return;
                         }
 
@@ -556,7 +561,7 @@
                 }
 
                 event.preventDefault();
-                alert('Selecciona al menos ' + comparisonConfig.min + ' desarrollos para comparar.');
+                alert('Selecciona al menos ' + comparisonConfig.min + ' productos para comparar.');
             });
 
             syncComparisonUi();
