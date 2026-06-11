@@ -121,6 +121,70 @@
             color: #fff;
         }
 
+        .swal2-popup.delete-confirm-popup {
+            width: min(92vw, 460px) !important;
+            padding: 2rem 2rem 1.75rem !important;
+            border-radius: 18px !important;
+        }
+
+        .swal2-popup.delete-confirm-popup .swal2-icon {
+            width: 64px !important;
+            height: 64px !important;
+            margin: 0 auto 1.25rem !important;
+        }
+
+        .swal2-popup.delete-confirm-popup .swal2-icon-content {
+            font-size: 3rem !important;
+        }
+
+        .swal2-popup.delete-confirm-popup .swal2-title {
+            margin: 0 0 .75rem !important;
+            padding: 0 !important;
+            color: #1f2a44 !important;
+            font-size: 1.45rem !important;
+            font-weight: 700 !important;
+            line-height: 1.25 !important;
+        }
+
+        .swal2-popup.delete-confirm-popup .swal2-html-container {
+            max-width: 360px;
+            margin: 0 auto 1.25rem !important;
+            color: #4b5675 !important;
+            font-size: 1rem !important;
+            line-height: 1.5 !important;
+        }
+
+        .swal2-popup.delete-confirm-popup .swal2-input.delete-confirm-input {
+            width: 100% !important;
+            min-width: 0 !important;
+            height: 48px !important;
+            margin: 0 0 1.5rem !important;
+            box-sizing: border-box !important;
+            border: 1px solid var(--bs-gray-300) !important;
+            border-radius: 10px !important;
+            background: var(--bs-gray-100) !important;
+            color: #1f2a44 !important;
+            font-size: 1rem !important;
+            font-weight: 600 !important;
+            box-shadow: none !important;
+        }
+
+        .swal2-popup.delete-confirm-popup .swal2-input.delete-confirm-input:focus {
+            border-color: var(--bs-primary) !important;
+            background: #fff !important;
+            box-shadow: 0 0 0 .25rem rgba(47, 128, 237, .12) !important;
+        }
+
+        .swal2-popup.delete-confirm-popup .swal2-actions {
+            gap: .75rem;
+            margin: 0 !important;
+        }
+
+        .swal2-popup.delete-confirm-popup .swal2-actions .btn {
+            min-width: 130px;
+            justify-content: center;
+        }
+
         .sidebar-brand-link {
             display: flex;
             align-items: center;
@@ -695,6 +759,59 @@
 
                     localStorage.setItem('data-bs-theme', nextMode);
                     document.documentElement.setAttribute('data-bs-theme', nextMode);
+                });
+            });
+
+            document.querySelectorAll('[data-confirm-delete]').forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    var requiredText = 'eliminar';
+                    var title = form.dataset.confirmTitle || 'Eliminar registro';
+                    var text = form.dataset.confirmText || 'Esta accion no se puede deshacer.';
+
+                    event.preventDefault();
+
+                    if (!window.Swal) {
+                        if ((window.prompt(text + ' Escribe "' + requiredText + '" para confirmar.') || '').trim().toLowerCase() === requiredText) {
+                            form.submit();
+                        }
+
+                        return;
+                    }
+
+                    Swal.fire({
+                        title: title,
+                        text: text,
+                        icon: 'warning',
+                        width: 460,
+                        input: 'text',
+                        inputPlaceholder: requiredText,
+                        inputAttributes: {
+                            autocapitalize: 'off',
+                            autocomplete: 'off',
+                        },
+                        showCancelButton: true,
+                        buttonsStyling: false,
+                        confirmButtonText: 'Eliminar',
+                        cancelButtonText: 'Cancelar',
+                        customClass: {
+                            popup: 'delete-confirm-popup',
+                            confirmButton: 'btn btn-danger',
+                            cancelButton: 'btn btn-light',
+                            input: 'delete-confirm-input',
+                        },
+                        preConfirm: function (value) {
+                            if ((value || '').trim().toLowerCase() !== requiredText) {
+                                Swal.showValidationMessage('Escribe eliminar para confirmar.');
+                                return false;
+                            }
+
+                            return true;
+                        },
+                    }).then(function (result) {
+                        if (result.isConfirmed) {
+                            form.submit();
+                        }
+                    });
                 });
             });
         });

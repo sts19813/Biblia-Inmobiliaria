@@ -111,6 +111,20 @@
                                             data-bs-toggle="tooltip" title="Editar">
                                             <i class="ki-outline ki-pencil fs-2"></i>
                                         </a>
+                                        @can('eliminar desarrolladora')
+                                            <form method="POST" action="{{ route('admin.developer-profile.destroy', $profile) }}"
+                                                class="d-inline" data-confirm-delete
+                                                data-confirm-title="Eliminar desarrolladora"
+                                                data-confirm-text="Se eliminara {{ $profile->commercial_name }} junto con sus imagenes. Escribe eliminar para confirmar.">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit"
+                                                    class="btn btn-icon btn-light btn-active-light-danger"
+                                                    data-bs-toggle="tooltip" title="Eliminar">
+                                                    <i class="ki-outline ki-trash fs-2"></i>
+                                                </button>
+                                            </form>
+                                        @endcan
                                     </div>
                                 </td>
                             </tr>

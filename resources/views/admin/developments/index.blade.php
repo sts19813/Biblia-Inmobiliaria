@@ -128,6 +128,20 @@
                                             data-bs-toggle="tooltip" title="Documentos">
                                             <i class="ki-outline ki-folder fs-2"></i>
                                         </a>
+                                        @can('eliminar desarrollo')
+                                            <form method="POST" action="{{ route('admin.developments.destroy', $development) }}"
+                                                class="d-inline" data-confirm-delete
+                                                data-confirm-title="Eliminar desarrollo"
+                                                data-confirm-text="Se eliminara {{ $development->name }} junto con sus imagenes y todos sus documentos. Escribe eliminar para confirmar.">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit"
+                                                    class="btn btn-icon btn-light btn-active-light-danger"
+                                                    data-bs-toggle="tooltip" title="Eliminar">
+                                                    <i class="ki-outline ki-trash fs-2"></i>
+                                                </button>
+                                            </form>
+                                        @endcan
                                     </div>
                                 </td>
                             </tr>

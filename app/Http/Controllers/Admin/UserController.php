@@ -95,9 +95,11 @@ class UserController extends Controller
             ->with('status', 'Usuario actualizado correctamente.');
     }
 
-    public function destroy(User $user)
+    public function destroy(Request $request, User $user)
     {
-        if ($user->is(auth()->user())) {
+        abort_unless($this->canDeleteUsers($request->user()), 403);
+
+        if ($user->is($request->user())) {
             return back()->withErrors(['user' => 'No puedes eliminar tu propio usuario.']);
         }
 
@@ -110,6 +112,11 @@ class UserController extends Controller
         return redirect()
             ->route('admin.users.index')
             ->with('status', 'Usuario eliminado correctamente.');
+    }
+
+    private function canDeleteUsers(User $user): bool
+    {
+        return $user->hasRole('administrador') || $user->can('eliminar usuarios');
     }
 
     private function validatedData(Request $request, ?User $user = null): array

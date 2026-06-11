@@ -33,10 +33,25 @@
         </h1>
         <div class="text-muted fw-semibold fs-6 mt-1">{{ $profile->legal_name }}</div>
     </div>
-    <a href="{{ route('admin.developer-profile.edit', $profile) }}" class="btn btn-primary">
-        <i class="ki-outline ki-pencil fs-2"></i>
-        Editar
-    </a>
+    <div class="d-flex gap-3">
+        <a href="{{ route('admin.developer-profile.edit', $profile) }}" class="btn btn-primary">
+            <i class="ki-outline ki-pencil fs-2"></i>
+            Editar
+        </a>
+        @can('eliminar desarrolladora')
+            <form method="POST" action="{{ route('admin.developer-profile.destroy', $profile) }}"
+                data-confirm-delete
+                data-confirm-title="Eliminar desarrolladora"
+                data-confirm-text="Se eliminara {{ $profile->commercial_name }} junto con sus imagenes. Escribe eliminar para confirmar.">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn btn-danger">
+                    <i class="ki-outline ki-trash fs-2"></i>
+                    Eliminar
+                </button>
+            </form>
+        @endcan
+    </div>
 @endsection
 
 @section('content')

@@ -112,6 +112,19 @@
             <i class="ki-outline ki-pencil fs-2"></i>
             Editar
         </a>
+        @can('eliminar desarrollo')
+            <form method="POST" action="{{ route('admin.developments.destroy', $development) }}"
+                data-confirm-delete
+                data-confirm-title="Eliminar desarrollo"
+                data-confirm-text="Se eliminara {{ $development->name }} junto con sus imagenes y todos sus documentos. Escribe eliminar para confirmar.">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn btn-danger">
+                    <i class="ki-outline ki-trash fs-2"></i>
+                    Eliminar
+                </button>
+            </form>
+        @endcan
     </div>
 @endsection
 
