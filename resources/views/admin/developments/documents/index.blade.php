@@ -71,6 +71,10 @@
 @endpush
 
 @section('content')
+    @php
+        $archiveExtensions = ['zip', 'rar', '7z', 'tar', 'gz'];
+    @endphp
+
     <div class="row g-8">
         <div class="col-xl-3">
             <div class="card card-flush">
@@ -158,11 +162,14 @@
                                 </thead>
                                 <tbody class="fw-semibold text-gray-600">
                                     @foreach ($activeFolder->files as $file)
+                                        @php
+                                            $isArchive = in_array(strtolower((string) $file->extension), $archiveExtensions, true);
+                                        @endphp
                                         <tr>
                                             <td>
                                                 <div class="d-flex align-items-center gap-3">
-                                                    <div class="document-file-icon rounded bg-light-danger d-flex align-items-center justify-content-center">
-                                                        <i class="ki-outline ki-document fs-2 text-danger"></i>
+                                                    <div class="document-file-icon rounded {{ $isArchive ? 'bg-light-warning' : 'bg-light-danger' }} d-flex align-items-center justify-content-center">
+                                                        <i class="ki-outline ki-document fs-2 {{ $isArchive ? 'text-warning' : 'text-danger' }}"></i>
                                                     </div>
                                                     <div>
                                                         <div class="fw-bold text-gray-900">{{ $file->original_name }}</div>
@@ -198,10 +205,12 @@
                                                     data-name="{{ $file->name }}">
                                                     <i class="ki-outline ki-pencil fs-2"></i>
                                                 </button>
-                                                <a href="{{ $file->url() }}" target="_blank" class="btn btn-icon btn-light btn-active-light-primary btn-sm" title="Ver">
-                                                    <i class="ki-outline ki-eye fs-2"></i>
-                                                </a>
-                                                <a href="{{ $file->url() }}" download class="btn btn-icon btn-light btn-active-light-primary btn-sm" title="Descargar">
+                                                @unless ($isArchive)
+                                                    <a href="{{ $file->url() }}" target="_blank" class="btn btn-icon btn-light btn-active-light-primary btn-sm" title="Ver">
+                                                        <i class="ki-outline ki-eye fs-2"></i>
+                                                    </a>
+                                                @endunless
+                                                <a href="{{ $file->url() }}" download class="btn btn-icon btn-light btn-active-light-primary btn-sm" title="{{ $isArchive ? 'Descargar ZIP' : 'Descargar' }}">
                                                     <i class="ki-outline ki-file-down fs-2"></i>
                                                 </a>
                                                 <form method="POST" action="{{ route('admin.developments.documents.files.featured', [$development, $file]) }}" class="d-inline">
@@ -238,18 +247,21 @@
                             action="{{ route('admin.developments.documents.files.upload', [$development, $activeFolder]) }}"
                             enctype="multipart/form-data"
                             data-document-upload-form
-                            data-max-upload-size="{{ 50 * 1024 * 1024 }}"
-                            data-max-upload-label="50 MB"
+                            data-max-upload-size="{{ $miniDriveUploadLimit['effective_bytes'] }}"
+                            data-max-upload-label="{{ $miniDriveUploadLimit['effective_label'] }}"
                             data-upload-url="{{ route('admin.developments.documents.files.upload', [$development, $activeFolder]) }}">
                             @csrf
                             <input id="quick_upload_input" type="file" name="files[]" class="d-none" multiple data-document-file-input>
-                            <input type="hidden" name="visibility" value="public">
+                            <input type="hidden" name="visibility" value="{{ $miniDriveDefaultVisibility }}">
                             <label for="quick_upload_input" class="document-dropzone d-flex align-items-center justify-content-center text-center p-8" data-document-dropzone>
                                 <span>
                                     <i class="ki-outline ki-file-up fs-3x text-gray-500 d-block mb-4"></i>
                                     <span class="fw-bold fs-4 text-gray-900 d-block">Arrastra archivos aqui</span>
                                     <span class="text-muted fw-semibold d-block mt-2">o haz clic para seleccionar y cargar automaticamente</span>
-                                    <span class="text-muted fs-7 d-block mt-3">PDF, imagenes, videos, Excel y mas (max. 50MB por archivo)</span>
+                                    <span class="text-muted fs-7 d-block mt-3">PDF, imagenes, videos, Excel, ZIP y mas (max. {{ $miniDriveUploadLimit['effective_label'] }} por archivo)</span>
+                                    @if ($miniDriveUploadLimit['is_server_limited'])
+                                        <span class="text-warning fs-8 fw-semibold d-block mt-2">El servidor esta limitando la carga por debajo de la configuracion guardada.</span>
+                                    @endif
                                 </span>
                             </label>
                             <div class="mt-4">
@@ -451,8 +463,8 @@
             var summary = uploadForm.querySelector('[data-document-file-summary]');
             var progressList = uploadForm.querySelector('[data-document-upload-progress-list]');
             var uploadUrl = uploadForm.dataset.uploadUrl || uploadForm.action;
-            var maxUploadSize = parseInt(uploadForm.dataset.maxUploadSize || '52428800', 10);
-            var maxUploadLabel = uploadForm.dataset.maxUploadLabel || '50 MB';
+            var maxUploadSize = parseInt(uploadForm.dataset.maxUploadSize || '0', 10);
+            var maxUploadLabel = uploadForm.dataset.maxUploadLabel || 'limite configurado';
             var activeUploads = 0;
             var finishedUploads = 0;
             var successfulUploads = 0;
@@ -661,7 +673,7 @@
             function uploadSingleFile(file, replaceExisting) {
                 var item = createProgressItem(file);
 
-                if (file.size > maxUploadSize) {
+                if (maxUploadSize > 0 && file.size > maxUploadSize) {
                     finishUpload(item, false, 'El archivo pesa ' + formatBytes(file.size) + '. El maximo permitido es ' + maxUploadLabel + '.');
                     return;
                 }

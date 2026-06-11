@@ -394,6 +394,56 @@
             color: #fff;
         }
 
+        .sidebar-storage-summary {
+            margin-bottom: 8px;
+            padding: 12px;
+            border-radius: 12px;
+            background: #f7f9fc;
+            border: 1px solid rgba(15, 23, 42, .06);
+        }
+
+        .sidebar-storage-title {
+            color: #1f2a44;
+            font-size: .82rem;
+            font-weight: 800;
+            line-height: 1.2;
+        }
+
+        .sidebar-storage-meta,
+        .sidebar-storage-exact {
+            color: #667085;
+            font-size: .75rem;
+            font-weight: 600;
+            line-height: 1.35;
+        }
+
+        .sidebar-storage-percent {
+            color: var(--bs-primary);
+            font-size: .82rem;
+            font-weight: 800;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .sidebar-storage-progress {
+            width: 100%;
+            height: 8px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: #e6ebf3;
+        }
+
+        .sidebar-storage-progress-bar {
+            height: 100%;
+            border-radius: inherit;
+            background: var(--bs-primary);
+        }
+
+        .sidebar-storage-exact {
+            margin-top: 8px;
+            word-break: break-word;
+        }
+
         .app-main {
             min-height: 100vh;
             margin-left: var(--admin-sidebar-width);
@@ -616,9 +666,9 @@
             left: calc(var(--admin-sidebar-mini-width) - 6px);
             bottom: 0;
             z-index: 120;
-            width: 275px;
-            max-width: min(275px, calc(100vw - var(--admin-sidebar-mini-width) - 24px));
-            max-height: 320px;
+            width: 310px;
+            max-width: min(310px, calc(100vw - var(--admin-sidebar-mini-width) - 24px));
+            max-height: 390px;
             overflow: hidden;
             flex-direction: column;
             gap: 6px;

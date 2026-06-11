@@ -271,6 +271,28 @@
                                 <div class="text-muted fs-8 text-truncate">{{ $user->email }}</div>
                             </div>
                         </div>
+                        <div class="sidebar-storage-summary">
+                            <div class="d-flex align-items-start justify-content-between gap-3 mb-2">
+                                <div>
+                                    <div class="sidebar-storage-title">Almacenamiento minidrive</div>
+                                    <div class="sidebar-storage-meta">
+                                        {{ $miniDriveStorage['used_label'] }} de {{ $miniDriveStorage['limit_label'] }}
+                                    </div>
+                                </div>
+                                <div class="sidebar-storage-percent">{{ $miniDriveStorage['percentage_label'] }}%</div>
+                            </div>
+                            <div class="sidebar-storage-progress" role="progressbar"
+                                aria-valuenow="{{ round($miniDriveStorage['percentage'], 2) }}"
+                                aria-valuemin="0"
+                                aria-valuemax="100"
+                                aria-label="Almacenamiento ocupado del minidrive">
+                                <div class="sidebar-storage-progress-bar"
+                                    style="width: {{ $miniDriveStorage['percentage'] }}%;"></div>
+                            </div>
+                            <div class="sidebar-storage-exact">
+                                Carpeta documentos: {{ $miniDriveStorage['used_exact_label'] }}
+                            </div>
+                        </div>
                         <a href="{{ route('admin.users.edit', $user) }}" class="sidebar-hover-link">Mi perfil</a>
                         <button type="button" class="sidebar-hover-link sidebar-hover-button" data-sidebar-theme-toggle>
                             Modo

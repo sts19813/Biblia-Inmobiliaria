@@ -7,6 +7,7 @@ use App\Models\Development;
 use App\Models\DevelopmentDocumentFile;
 use App\Models\DevelopmentDocumentFolder;
 use App\Models\User;
+use App\Support\SystemSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -31,6 +32,8 @@ class DevelopmentDocumentController extends Controller
             'folders' => $folders,
             'activeFolder' => $activeFolder,
             'users' => User::orderBy('name')->get(),
+            'miniDriveUploadLimit' => SystemSettings::miniDriveUploadLimit(),
+            'miniDriveDefaultVisibility' => SystemSettings::miniDriveDefaultVisibility(),
         ]);
     }
 
@@ -61,16 +64,18 @@ class DevelopmentDocumentController extends Controller
         abort_unless($folder->development_id === $development->id, 404);
         abort_unless($this->canUploadToFolder($request->user(), $folder), 403);
 
+        $uploadLimit = SystemSettings::miniDriveUploadLimit();
+
         $data = $request->validate([
             'files' => ['required', 'array'],
-            'files.*' => ['file', 'max:51200'],
+            'files.*' => ['file', 'max:'.$uploadLimit['effective_kilobytes']],
             'visibility' => ['required', 'in:public,private'],
             'replace_existing' => ['nullable', 'boolean'],
         ], [
             'files.required' => 'Selecciona al menos un archivo para cargar.',
             'files.array' => 'La carga debe incluir una lista de archivos.',
             'files.*.file' => 'Cada elemento debe ser un archivo valido.',
-            'files.*.max' => 'El archivo no debe pesar mas de 50 MB.',
+            'files.*.max' => 'El archivo no debe pesar mas de '.$uploadLimit['effective_label'].'.',
             'visibility.required' => 'Selecciona la visibilidad del archivo.',
             'visibility.in' => 'La visibilidad seleccionada no es valida.',
         ]);
@@ -81,14 +86,14 @@ class DevelopmentDocumentController extends Controller
         foreach ($data['files'] as $file) {
             $originalName = $file->getClientOriginalName();
             $name = pathinfo($originalName, PATHINFO_FILENAME);
-            $extension = strtolower($file->getClientOriginalExtension());
+            $extension = strtolower($file->getClientOriginalExtension() ?: $file->guessExtension() ?: '');
             $existingFile = $folder->files()
                 ->whereRaw('LOWER(name) = ?', [Str::lower($name)])
                 ->whereRaw('LOWER(extension) = ?', [Str::lower($extension)])
                 ->first();
 
             if ($existingFile && ! $replaceExisting) {
-                $message = 'Ya existe un archivo con el mismo nombre y extension: ' . $existingFile->original_name . '.';
+                $message = 'Ya existe un archivo con el mismo nombre y extension: '.$existingFile->original_name.'.';
 
                 if ($request->expectsJson()) {
                     return response()->json([
@@ -105,9 +110,9 @@ class DevelopmentDocumentController extends Controller
                 $existingFile->delete();
             }
 
-            $storedName = Str::uuid() . ($extension ? '.' . $extension : '');
+            $storedName = Str::uuid().($extension ? '.'.$extension : '');
             $path = $file->storeAs(
-                'development-documents/' . $development->id . '/' . $folder->id,
+                'development-documents/'.$development->id.'/'.$folder->id,
                 $storedName,
                 'public'
             );
@@ -153,17 +158,17 @@ class DevelopmentDocumentController extends Controller
 
         $name = trim($data['name']);
         $extension = trim((string) $file->extension);
-        $extensionSuffix = $extension ? '.' . $extension : '';
+        $extensionSuffix = $extension ? '.'.$extension : '';
 
         if ($name === '') {
             return back()->withErrors(['name' => 'El nombre del archivo es obligatorio.']);
         }
 
-        if ($extensionSuffix && Str::endsWith(Str::lower($name), '.' . Str::lower($extension))) {
+        if ($extensionSuffix && Str::endsWith(Str::lower($name), '.'.Str::lower($extension))) {
             $name = substr($name, 0, -strlen($extensionSuffix));
         }
 
-        $originalName = $extension ? $name . '.' . $extension : $name;
+        $originalName = $extension ? $name.'.'.$extension : $name;
 
         $file->update([
             'name' => $name,
