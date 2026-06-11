@@ -1,10 +1,5 @@
 <?php
 
-use App\Http\Controllers\Auth\AuthenticatedSessionController;
-use App\Http\Controllers\Auth\GoogleAuthController;
-use App\Http\Controllers\Auth\NewPasswordController;
-use App\Http\Controllers\Auth\PasswordResetLinkController;
-use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Admin\AdvisorDevelopmentCatalogController;
 use App\Http\Controllers\Admin\AmenityController;
 use App\Http\Controllers\Admin\DashboardController;
@@ -16,6 +11,11 @@ use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\GoogleAuthController;
+use App\Http\Controllers\Auth\NewPasswordController;
+use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\PublicDevelopmentDocumentController;
 use Illuminate\Support\Facades\Route;
 
@@ -100,5 +100,6 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('perfil-desarrolladora/{developerProfile}/editar', [DeveloperProfileController::class, 'edit'])->name('developer-profile.edit');
     Route::match(['put', 'patch'], 'perfil-desarrolladora/{developerProfile}', [DeveloperProfileController::class, 'update'])->name('developer-profile.update');
     Route::delete('perfil-desarrolladora/{developerProfile}', [DeveloperProfileController::class, 'destroy'])->name('developer-profile.destroy');
-    Route::get('configuraciones', SettingsController::class)->name('settings');
+    Route::get('configuraciones', [SettingsController::class, 'index'])->name('settings');
+    Route::patch('configuraciones', [SettingsController::class, 'update'])->name('settings.update');
 });

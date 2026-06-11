@@ -13,6 +13,10 @@
     </style>
 </head>
 <body>
+    @php
+        $archiveExtensions = ['zip', 'rar', '7z', 'tar', 'gz'];
+    @endphp
+
     <header class="bg-white border-bottom">
         <div class="container py-10">
             <a href="{{ route('public.documents.index', $development->document_share_token) }}" class="text-primary fw-bold fs-5 d-inline-flex align-items-center mb-8">
@@ -50,6 +54,9 @@
         <div class="card card-flush">
             <div class="card-body p-0">
                 @forelse ($folder->files as $file)
+                    @php
+                        $isArchive = in_array(strtolower((string) $file->extension), $archiveExtensions, true);
+                    @endphp
                     <div class="folder-file-row d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-6 px-10 py-8 border-bottom"
                         data-folder-file-row
                         data-search-text="{{ Str::lower($file->original_name . ' ' . $file->extension . ' ' . $folder->name) }}">
@@ -65,10 +72,12 @@
                             </div>
                         </div>
                         <div class="d-flex gap-3">
-                            <a href="{{ route('public.documents.files.view', [$development->document_share_token, $file]) }}" target="_blank" class="btn btn-light">
-                                <i class="ki-outline ki-eye fs-2"></i>
-                                Ver
-                            </a>
+                            @unless ($isArchive)
+                                <a href="{{ route('public.documents.files.view', [$development->document_share_token, $file]) }}" target="_blank" class="btn btn-light">
+                                    <i class="ki-outline ki-eye fs-2"></i>
+                                    Ver
+                                </a>
+                            @endunless
                             <a href="{{ route('public.documents.files.download', [$development->document_share_token, $file]) }}" class="btn btn-primary">
                                 <i class="ki-outline ki-file-down fs-2"></i>
                                 Descargar

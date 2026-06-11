@@ -77,6 +77,7 @@
 <body>
     @php
         $iconClasses = ['bg-primary', 'bg-success', 'bg-info', 'bg-warning', 'bg-danger', 'bg-dark'];
+        $archiveExtensions = ['zip', 'rar', '7z', 'tar', 'gz'];
         $publicFileCount = $folders->sum(fn ($folder) => $folder->files->count());
         $developerProfiles = collect([$development->developerProfile])->filter();
         $masterBroker = $development->created_by ? \App\Models\User::find($development->created_by) : null;
@@ -151,6 +152,9 @@
             <div class="card-body p-0" data-search-results>
                 @foreach ($folders as $folder)
                     @foreach ($folder->files as $file)
+                        @php
+                            $isArchive = in_array(strtolower((string) $file->extension), $archiveExtensions, true);
+                        @endphp
                         <div class="search-result-row d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-4 px-8 py-6 border-bottom"
                             data-search-result
                             data-search-text="{{ Str::lower($folder->name . ' ' . $file->original_name . ' ' . $file->extension . ' ' . $development->name) }}">
@@ -166,10 +170,12 @@
                                 </div>
                             </div>
                             <div class="d-flex gap-2">
-                                <a href="{{ route('public.documents.files.view', [$development->document_share_token, $file]) }}" target="_blank" class="btn btn-sm btn-light">
-                                    <i class="ki-outline ki-eye fs-3"></i>
-                                    Ver
-                                </a>
+                                @unless ($isArchive)
+                                    <a href="{{ route('public.documents.files.view', [$development->document_share_token, $file]) }}" target="_blank" class="btn btn-sm btn-light">
+                                        <i class="ki-outline ki-eye fs-3"></i>
+                                        Ver
+                                    </a>
+                                @endunless
                                 <a href="{{ route('public.documents.files.download', [$development->document_share_token, $file]) }}" class="btn btn-sm btn-primary">
                                     <i class="ki-outline ki-file-down fs-3"></i>
                                     Descargar

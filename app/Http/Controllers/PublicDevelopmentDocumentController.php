@@ -37,6 +37,10 @@ class PublicDevelopmentDocumentController extends Controller
     {
         $this->assertPublicFile($token, $file);
 
+        if ($this->isArchive($file)) {
+            return Storage::disk($file->disk)->download($file->path, $file->original_name);
+        }
+
         return redirect(Storage::disk($file->disk)->url($file->path));
     }
 
@@ -60,5 +64,10 @@ class PublicDevelopmentDocumentController extends Controller
             $file->visibility === 'public' && $file->folder?->development_id === $development->id,
             404
         );
+    }
+
+    private function isArchive(DevelopmentDocumentFile $file): bool
+    {
+        return in_array(strtolower((string) $file->extension), ['zip', 'rar', '7z', 'tar', 'gz'], true);
     }
 }
