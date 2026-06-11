@@ -69,6 +69,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('desarrollos/{development}', [DevelopmentController::class, 'show'])->name('developments.show');
     Route::get('desarrollos/{development}/editar', [DevelopmentController::class, 'edit'])->name('developments.edit');
     Route::match(['put', 'patch'], 'desarrollos/{development}', [DevelopmentController::class, 'update'])->name('developments.update');
+    Route::delete('desarrollos/{development}', [DevelopmentController::class, 'destroy'])->name('developments.destroy');
     Route::get('desarrollos/{development}/documentos', [DevelopmentDocumentController::class, 'index'])->name('developments.documents.index');
     Route::post('desarrollos/{development}/documentos/carpetas', [DevelopmentDocumentController::class, 'storeFolder'])->name('developments.documents.folders.store');
     Route::post('desarrollos/{development}/documentos/carpetas/{folder}/archivos', [DevelopmentDocumentController::class, 'upload'])->name('developments.documents.files.upload');
@@ -98,5 +99,6 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('perfil-desarrolladora/{developerProfile}', [DeveloperProfileController::class, 'show'])->name('developer-profile.show');
     Route::get('perfil-desarrolladora/{developerProfile}/editar', [DeveloperProfileController::class, 'edit'])->name('developer-profile.edit');
     Route::match(['put', 'patch'], 'perfil-desarrolladora/{developerProfile}', [DeveloperProfileController::class, 'update'])->name('developer-profile.update');
+    Route::delete('perfil-desarrolladora/{developerProfile}', [DeveloperProfileController::class, 'destroy'])->name('developer-profile.destroy');
     Route::get('configuraciones', SettingsController::class)->name('settings');
 });

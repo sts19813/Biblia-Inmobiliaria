@@ -210,6 +210,33 @@ class DevelopmentController extends Controller
             ->with('status', 'Desarrollo actualizado correctamente.');
     }
 
+    /**
+     * Elimina un desarrollo y sus archivos asociados.
+     */
+    public function destroy(Request $request, Development $development)
+    {
+        abort_unless($request->user()->can('eliminar desarrollo'), 403);
+
+        $development->load('documentFolders.files');
+
+        $this->deletePublicFile($development->logo_path);
+        $this->deletePublicFile($development->cover_image_path);
+
+        foreach ($development->documentFolders as $folder) {
+            foreach ($folder->files as $file) {
+                Storage::disk($file->disk)->delete($file->path);
+            }
+        }
+
+        Storage::disk('public')->deleteDirectory('development-documents/' . $development->id);
+
+        $development->delete();
+
+        return redirect()
+            ->route('admin.developments.index')
+            ->with('status', 'Desarrollo eliminado correctamente.');
+    }
+
     private function validatedData(Request $request): array
     {
         $rules = [

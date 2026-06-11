@@ -96,13 +96,18 @@
                                         <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-icon btn-light btn-active-light-primary btn-sm me-1">
                                             <i class="ki-outline ki-pencil fs-2"></i>
                                         </a>
-                                        <form method="POST" action="{{ route('admin.users.destroy', $user) }}" class="d-inline" onsubmit="return confirm('Seguro que deseas eliminar este usuario?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-icon btn-light btn-active-light-danger btn-sm">
-                                                <i class="ki-outline ki-trash fs-2"></i>
-                                            </button>
-                                        </form>
+                                        @if (! $user->is(auth()->user()) && (auth()->user()->hasRole('administrador') || auth()->user()->can('eliminar usuarios')))
+                                            <form method="POST" action="{{ route('admin.users.destroy', $user) }}"
+                                                class="d-inline" data-confirm-delete
+                                                data-confirm-title="Eliminar usuario"
+                                                data-confirm-text="Se eliminara {{ $user->name }} y su acceso al sistema. Escribe eliminar para confirmar.">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-icon btn-light btn-active-light-danger btn-sm">
+                                                    <i class="ki-outline ki-trash fs-2"></i>
+                                                </button>
+                                            </form>
+                                        @endif
                                     </td>
                                 </tr>
                             @empty

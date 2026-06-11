@@ -59,6 +59,28 @@ class DeveloperProfileController extends Controller
         return $this->savedResponse($request, $developerProfile, 'Desarrolladora actualizada correctamente.');
     }
 
+    /**
+     * Elimina una desarrolladora y sus imágenes asociadas.
+     */
+    public function destroy(Request $request, DeveloperProfile $developerProfile)
+    {
+        abort_unless($request->user()->can('eliminar desarrolladora'), 403);
+
+        if ($developerProfile->logo_path) {
+            Storage::disk('public')->delete($developerProfile->logo_path);
+        }
+
+        if ($developerProfile->cover_image_path) {
+            Storage::disk('public')->delete($developerProfile->cover_image_path);
+        }
+
+        $developerProfile->delete();
+
+        return redirect()
+            ->route('admin.developer-profile')
+            ->with('status', 'Desarrolladora eliminada correctamente.');
+    }
+
     private function validatedData(Request $request): array
     {
         return $request->validate([
