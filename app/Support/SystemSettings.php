@@ -68,7 +68,7 @@ class SystemSettings
             'general.system_name' => config('app.name', 'Biblia Inmobiliaria'),
             'general.support_email' => config('mail.from.address', 'hello@example.com'),
             'mini_drive.storage_limit_gb' => config('filesystems.mini_drive.storage_limit_gb', 50),
-            'mini_drive.max_file_size_mb' => config('filesystems.mini_drive.max_file_size_mb', 50),
+            'mini_drive.max_file_size_mb' => config('filesystems.mini_drive.max_file_size_mb', 10240),
             'mini_drive.default_visibility' => 'public',
             'mini_drive.storage_warning_percent' => 80,
         ];

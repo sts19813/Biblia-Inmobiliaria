@@ -31,7 +31,7 @@ class SettingsController extends Controller
             'system_name' => ['required', 'string', 'max:120'],
             'support_email' => ['nullable', 'email', 'max:150'],
             'mini_drive_storage_limit_gb' => ['required', 'numeric', 'min:1', 'max:10240'],
-            'mini_drive_max_file_size_mb' => ['required', 'integer', 'min:1', 'max:2048'],
+            'mini_drive_max_file_size_mb' => ['required', 'integer', 'min:1', 'max:51200'],
             'mini_drive_default_visibility' => ['required', 'in:public,private'],
             'mini_drive_storage_warning_percent' => ['required', 'integer', 'min:50', 'max:100'],
         ], [

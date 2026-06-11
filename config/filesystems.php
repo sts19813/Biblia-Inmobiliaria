@@ -17,7 +17,7 @@ return [
 
     'mini_drive' => [
         'storage_limit_gb' => env('MINI_DRIVE_STORAGE_LIMIT_GB', 50),
-        'max_file_size_mb' => env('MINI_DRIVE_MAX_FILE_SIZE_MB', 50),
+        'max_file_size_mb' => env('MINI_DRIVE_MAX_FILE_SIZE_MB', 10240),
     ],
 
     /*

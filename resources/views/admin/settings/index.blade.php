@@ -249,7 +249,7 @@
                                 <label for="mini_drive_max_file_size_mb" class="form-label fw-semibold">Maximo por archivo</label>
                                 <div class="input-group input-group-solid">
                                     <input id="mini_drive_max_file_size_mb" type="number" name="mini_drive_max_file_size_mb"
-                                        class="form-control form-control-solid" min="1" max="2048"
+                                        class="form-control form-control-solid" min="1" max="51200"
                                         value="{{ old('mini_drive_max_file_size_mb', $settings['mini_drive_max_file_size_mb']) }}" required>
                                     <span class="input-group-text">MB</span>
                                 </div>
