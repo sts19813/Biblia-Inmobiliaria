@@ -318,6 +318,38 @@
             box-shadow: 0 8px 20px rgba(248, 40, 90, .22);
         }
 
+        .sidebar-user-menu-trigger img,
+        .sidebar-user-hover-card .symbol img,
+        .sidebar-user-card > .menu-sub-dropdown .symbol img {
+            display: block;
+            width: 100% !important;
+            height: 100% !important;
+            max-width: 100% !important;
+            max-height: 100% !important;
+            object-fit: cover !important;
+        }
+
+        .sidebar-user-hover-card .symbol,
+        .sidebar-user-card > .menu-sub-dropdown .symbol {
+            flex: 0 0 auto;
+            overflow: hidden;
+            border-radius: 50%;
+        }
+
+        .sidebar-user-hover-card .symbol.symbol-45px {
+            width: 45px !important;
+            height: 45px !important;
+            min-width: 45px !important;
+            max-width: 45px !important;
+        }
+
+        .sidebar-user-card > .menu-sub-dropdown .symbol.symbol-50px {
+            width: 50px !important;
+            height: 50px !important;
+            min-width: 50px !important;
+            max-width: 50px !important;
+        }
+
         .sidebar-user-details {
             min-width: 0;
         }
@@ -585,6 +617,9 @@
             bottom: 0;
             z-index: 120;
             width: 275px;
+            max-width: min(275px, calc(100vw - var(--admin-sidebar-mini-width) - 24px));
+            max-height: 320px;
+            overflow: hidden;
             flex-direction: column;
             gap: 6px;
             padding: 14px;
