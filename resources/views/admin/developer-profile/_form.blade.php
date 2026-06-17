@@ -119,23 +119,23 @@
                             <label class="form-label fw-semibold">Sitio web</label>
                             <input type="url" name="website" class="form-control form-control-solid"
                                 value="{{ old('website', $profile->website) }}"
-                                placeholder="https://www.empresa.com" data-preview-text="website">
+                                data-preview-text="website">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Email corporativo</label>
                             <input type="email" name="corporate_email" class="form-control form-control-solid"
                                 value="{{ old('corporate_email', $profile->corporate_email) }}"
-                                placeholder="contacto@empresa.com" data-preview-text="corporate_email">
+                                data-preview-text="corporate_email">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Telefono</label>
                             <input type="text" name="phone" class="form-control form-control-solid"
-                                value="{{ old('phone', $profile->phone) }}" placeholder="+52 81 1234 5678">
+                                value="{{ old('phone', $profile->phone) }}">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">WhatsApp</label>
                             <input type="text" name="whatsapp" class="form-control form-control-solid"
-                                value="{{ old('whatsapp', $profile->whatsapp) }}" placeholder="+52 81 1234 5678">
+                                value="{{ old('whatsapp', $profile->whatsapp) }}">
                         </div>
                     </div>
                 </div>
@@ -151,7 +151,7 @@
                     <div class="mb-6">
                         <label class="form-label fw-semibold">Direccion completa</label>
                         <input type="text" name="address" class="form-control form-control-solid"
-                            value="{{ old('address', $profile->address) }}" placeholder="Calle, numero, colonia">
+                            value="{{ old('address', $profile->address) }}">
                     </div>
                     <div class="row g-6">
                         <div class="col-md-4">
@@ -185,13 +185,11 @@
                     <div class="mb-6">
                         <label class="form-label fw-semibold">Descripcion corta</label>
                         <textarea name="short_description" class="form-control form-control-solid" rows="3" maxlength="150"
-                            placeholder="Breve descripcion de la empresa (max. 150 caracteres)"
                             data-preview-text="short_description">{{ old('short_description', $profile->short_description) }}</textarea>
                     </div>
                     <div>
                         <label class="form-label fw-semibold">Descripcion larga</label>
-                        <textarea name="long_description" class="form-control form-control-solid" rows="8"
-                            placeholder="Descripcion detallada de la empresa, historia, valores, etc.">{{ old('long_description', $profile->long_description) }}</textarea>
+                        <textarea name="long_description" class="form-control form-control-solid" rows="8">{{ old('long_description', $profile->long_description) }}</textarea>
                     </div>
                 </div>
             </div>
@@ -207,26 +205,22 @@
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Facebook</label>
                             <input type="url" name="facebook_url" class="form-control form-control-solid"
-                                value="{{ old('facebook_url', $profile->facebook_url) }}"
-                                placeholder="https://facebook.com/empresa">
+                                value="{{ old('facebook_url', $profile->facebook_url) }}">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Instagram</label>
                             <input type="url" name="instagram_url" class="form-control form-control-solid"
-                                value="{{ old('instagram_url', $profile->instagram_url) }}"
-                                placeholder="https://instagram.com/empresa">
+                                value="{{ old('instagram_url', $profile->instagram_url) }}">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">LinkedIn</label>
                             <input type="url" name="linkedin_url" class="form-control form-control-solid"
-                                value="{{ old('linkedin_url', $profile->linkedin_url) }}"
-                                placeholder="https://linkedin.com/company/empresa">
+                                value="{{ old('linkedin_url', $profile->linkedin_url) }}">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Twitter / X</label>
                             <input type="url" name="twitter_url" class="form-control form-control-solid"
-                                value="{{ old('twitter_url', $profile->twitter_url) }}"
-                                placeholder="https://twitter.com/empresa">
+                                value="{{ old('twitter_url', $profile->twitter_url) }}">
                         </div>
                     </div>
                 </div>

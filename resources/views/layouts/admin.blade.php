@@ -26,7 +26,7 @@
             --admin-sidebar-text: rgba(210, 220, 243, .82);
             --admin-sidebar-text-active: #ffffff;
             --admin-sidebar-width: 300px !important;
-            --admin-sidebar-hover-overlap: 26px;
+            --admin-sidebar-hover-overlap: 19px;
             --bs-text-white: #fff !important;
         }
 
