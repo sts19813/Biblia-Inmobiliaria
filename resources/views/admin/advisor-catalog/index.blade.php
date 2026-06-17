@@ -267,8 +267,8 @@
                     <div class="card-header align-items-center py-5 gap-3">
                         <div class="card-title">
                             <div>
-                                <h3 class="fw-bold text-gray-900 mb-1">Mostrando {{ $catalogItems->total() }} productos</h3>
-                                <div class="text-muted fw-semibold fs-7">De {{ $totalProducts }} productos en {{ $totalDevelopments }} desarrollos.</div>
+                                <h3 class="fw-bold text-gray-900 mb-1">Mostrando {{ $catalogItems->total() }} modelos</h3>
+                                <div class="text-muted fw-semibold fs-7">De {{ $totalProducts }} modelos en {{ $totalDevelopments }} desarrollos.</div>
                             </div>
                         </div>
                         <div class="card-toolbar">
@@ -304,9 +304,9 @@
                                 <thead>
                                     <tr class="text-start text-gray-700 fw-bold fs-8 text-uppercase gs-0">
                                         <th class="advisor-select-col text-center"></th>
-                                        <th class="advisor-development-col">Producto / desarrollo</th>
+                                        <th class="advisor-development-col">Modelo / desarrollo</th>
                                         <th>Ubicacion</th>
-                                        <th>Precio desde</th>
+                                        <th>Precio</th>
                                         <th>Fecha entrega</th>
                                         <th>M2 construccion</th>
                                         <th>M2 superficie</th>
@@ -334,7 +334,8 @@
                                             $development = $item['development'];
                                             $product = $item['product'];
                                             $selectionKey = $item['key'];
-                                            $productName = $product['product_name'] ?? 'Producto ' . ($item['product_index'] + 1);
+                                            $productName = $product['product_name'] ?? 'Modelo ' . ($item['product_index'] + 1);
+                                            $modelPrice = $product['price'] ?? $development->price_from;
                                             $fullBathrooms = $detail($product, 'full_bathrooms', $detail($product, 'bathrooms'));
                                             $documentsCount = $development->documentFolders->sum(fn ($folder) => $folder->files->count());
                                         @endphp
@@ -366,7 +367,7 @@
                                                 </div>
                                             </td>
                                             <td>{{ $development->zone }}<div class="text-muted fs-8">{{ $development->city }}</div></td>
-                                            <td class="fw-bold text-gray-900">${{ number_format((float) $development->price_from, 0) }}</td>
+                                            <td class="fw-bold text-gray-900">${{ number_format((float) $modelPrice, 0) }}</td>
                                             <td>{{ $development->delivery_date?->format('M Y') }}</td>
                                             <td>{{ $detail($product, 'construction_m2') !== '-' ? $detail($product, 'construction_m2') . ' m2' : '-' }}</td>
                                             <td>{{ $detail($product, 'land_m2') !== '-' ? $detail($product, 'land_m2') . ' m2' : '-' }}</td>
@@ -407,7 +408,7 @@
                                         <tr>
                                             <td colspan="23" class="text-center py-12">
                                                 <i class="ki-outline ki-magnifier fs-3x text-gray-400 mb-4"></i>
-                                                <div class="fw-bold fs-4 text-gray-900">Sin productos encontrados.</div>
+                                                <div class="fw-bold fs-4 text-gray-900">Sin modelos encontrados.</div>
                                                 <div class="text-muted fw-semibold">Ajusta los filtros para ampliar la busqueda.</div>
                                             </td>
                                         </tr>
@@ -541,7 +542,7 @@
                     if (checkbox.checked) {
                         if (!comparisonSelected.has(id) && comparisonSelected.size >= comparisonConfig.max) {
                             checkbox.checked = false;
-                            alert('Solo puedes comparar hasta ' + comparisonConfig.max + ' productos.');
+                            alert('Solo puedes comparar hasta ' + comparisonConfig.max + ' modelos.');
                             return;
                         }
 
@@ -561,7 +562,7 @@
                 }
 
                 event.preventDefault();
-                alert('Selecciona al menos ' + comparisonConfig.min + ' productos para comparar.');
+                alert('Selecciona al menos ' + comparisonConfig.min + ' modelos para comparar.');
             });
 
             syncComparisonUi();

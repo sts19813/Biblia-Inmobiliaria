@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Amenity;
 use App\Models\DeveloperProfile;
 use App\Models\Development;
+use App\Models\PaymentMethod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class DevelopmentController extends Controller
@@ -32,7 +34,8 @@ class DevelopmentController extends Controller
     ];
 
     public const DETAIL_LABELS = [
-        'product_name' => 'Nombre del producto',
+        'product_name' => 'Nombre del modelo',
+        'price' => 'Precio',
         'construction_m2' => 'm2 de construccion',
         'land_m2' => 'm2 de terreno',
         'front_m' => 'Frente (m)',
@@ -61,8 +64,6 @@ class DevelopmentController extends Controller
         'trash_chute' => 'Shute basura',
         'covered_parking' => 'Estacionamiento techado',
         'ocean_view' => 'Vista al mar',
-        'vacation_rental_program' => 'Programa renta vacacional',
-        'estimated_yield' => 'Rendimiento estimado (%)',
         'primary_bedroom_ocean_view' => 'Recamara principal con vista al mar',
         'rooftop' => 'Rooftop',
         'water_supply' => 'Agua potable o pipa',
@@ -79,6 +80,7 @@ class DevelopmentController extends Controller
     public const DETAIL_FIELD_GROUPS = [
         'casa' => [
             'product_name',
+            'price',
             'construction_m2', 'land_m2', 'front_m', 'depth_m', 'levels', 'bedrooms', 'full_bathrooms',
             'half_bathrooms', 'parking_spaces', 'ground_floor_bedroom', 'street_type', 'equipment',
             'orientation', 'service_room', 'pool', 'family_room', 'solar_panel_preparation',
@@ -86,6 +88,7 @@ class DevelopmentController extends Controller
         ],
         'departamento' => [
             'product_name',
+            'price',
             'construction_m2', 'floor_level', 'bedrooms', 'full_bathrooms', 'half_bathrooms',
             'parking_spaces', 'storage', 'security_24_7', 'orientation', 'equipment', 'balcony',
             'building_floors', 'elevator', 'elevators_count', 'pool', 'trash_chute',
@@ -93,17 +96,20 @@ class DevelopmentController extends Controller
         ],
         'playa' => [
             'product_name',
+            'price',
             'construction_m2', 'bedrooms', 'full_bathrooms', 'half_bathrooms', 'parking_spaces',
-            'ocean_view', 'vacation_rental_program', 'estimated_yield', 'primary_bedroom_ocean_view',
+            'ocean_view', 'primary_bedroom_ocean_view',
             'elevator', 'rooftop', 'water_supply', 'sea_access', 'service_room', 'equipment',
         ],
         'terreno' => [
             'product_name',
+            'price',
             'land_m2', 'front_m', 'depth_m', 'land_use', 'available_services',
             'construction_restrictions', 'street_type', 'orientation',
         ],
         'comercial' => [
             'product_name',
+            'price',
             'construction_m2', 'front_m', 'depth_m', 'bathrooms', 'parking_spaces', 'permitted_use',
             'rent_option', 'delivery_condition', 'building_floors', 'elevator', 'elevators_count',
             'orientation',
@@ -127,6 +133,7 @@ class DevelopmentController extends Controller
             'statuses' => self::STATUSES,
             'developerProfiles' => $this->developerProfiles(),
             'amenitiesCatalog' => $this->amenitiesCatalog(),
+            'paymentMethodsCatalog' => $this->paymentMethodsCatalog(),
         ]);
     }
 
@@ -135,7 +142,12 @@ class DevelopmentController extends Controller
         $data = $this->validatedData($request);
         $data['description'] = $data['description'] ?? null;
         $data['developer'] = $this->developerName($data['developer_profile_id'] ?? null);
-        $data['amenities'] = $this->amenitiesToArray($data['amenities'] ?? []);
+        $data['monthly_payments'] = $data['monthly_payments'] ?? 0;
+        $data['payment_methods'] = $this->itemsToArray($data['payment_methods'] ?? []);
+        $data['amenities'] = $this->itemsToArray($data['amenities'] ?? []);
+        $this->syncPaymentMethodsCatalog($data['payment_methods']);
+        $this->syncAmenitiesCatalog($data['amenities']);
+        $data['payment_methods'] = implode("\n", $data['payment_methods']);
         $data['property_details'] = $this->normalizeDetails(
             $data['property_type'],
             $data['property_details'] ?? []
@@ -179,6 +191,7 @@ class DevelopmentController extends Controller
             'statuses' => self::STATUSES,
             'developerProfiles' => $this->developerProfiles(),
             'amenitiesCatalog' => $this->amenitiesCatalog(),
+            'paymentMethodsCatalog' => $this->paymentMethodsCatalog(),
         ]);
     }
 
@@ -187,7 +200,12 @@ class DevelopmentController extends Controller
         $data = $this->validatedData($request);
         $data['description'] = $data['description'] ?? null;
         $data['developer'] = $this->developerName($data['developer_profile_id'] ?? null);
-        $data['amenities'] = $this->amenitiesToArray($data['amenities'] ?? []);
+        $data['monthly_payments'] = $data['monthly_payments'] ?? 0;
+        $data['payment_methods'] = $this->itemsToArray($data['payment_methods'] ?? []);
+        $data['amenities'] = $this->itemsToArray($data['amenities'] ?? []);
+        $this->syncPaymentMethodsCatalog($data['payment_methods']);
+        $this->syncAmenitiesCatalog($data['amenities']);
+        $data['payment_methods'] = implode("\n", $data['payment_methods']);
         $data['property_details'] = $this->normalizeDetails(
             $data['property_type'],
             $data['property_details'] ?? []
@@ -252,8 +270,9 @@ class DevelopmentController extends Controller
             'price_from' => ['required', 'numeric', 'min:0'],
             'price_per_m2' => ['required', 'numeric', 'min:0'],
             'down_payment' => ['required', 'numeric', 'min:0'],
-            'monthly_payments' => ['required', 'numeric', 'min:0'],
-            'payment_methods' => ['required', 'string'],
+            'monthly_payments' => ['nullable', 'numeric', 'min:0'],
+            'payment_methods' => ['required', 'array', 'min:1'],
+            'payment_methods.*' => ['string', 'max:120'],
             'delivery_date' => ['required', 'date'],
             'status' => ['required', Rule::in(array_keys(self::STATUSES))],
             'amenities' => ['nullable', 'array'],
@@ -267,6 +286,7 @@ class DevelopmentController extends Controller
             'property_details' => ['nullable', 'array'],
             'property_details.*' => ['array'],
             'property_details.*.product_name' => ['nullable', 'string', 'max:255'],
+            'property_details.*.price' => ['nullable', 'numeric', 'min:0'],
         ];
 
         foreach ($this->detailRules($request->input('property_type')) as $field => $fieldRules) {
@@ -351,12 +371,10 @@ class DevelopmentController extends Controller
                 'half_bathrooms' => ['nullable', 'integer', 'min:0'],
                 'parking_spaces' => ['nullable', 'integer', 'min:0'],
                 'ocean_view' => ['nullable', Rule::in(['frontal', 'lateral', 'sin_vista'])],
-                'vacation_rental_program' => ['nullable', Rule::in($yesNo)],
-                'estimated_yield' => ['nullable', 'numeric', 'between:0,100'],
                 'primary_bedroom_ocean_view' => ['nullable', Rule::in($yesNo)],
                 'elevator' => ['nullable', Rule::in($yesNo)],
                 'rooftop' => ['nullable', Rule::in($yesNo)],
-                'water_supply' => ['nullable', Rule::in(['agua_potable', 'pipa', 'mixto'])],
+                'water_supply' => ['nullable', Rule::in(['agua_potable', 'pipa', 'pozo', 'mixto'])],
                 'sea_access' => ['nullable', Rule::in(['primera_fila', 'segunda_fila', 'tercera_fila', 'posterior'])],
                 'service_room' => ['nullable', Rule::in($yesNo)],
                 'equipment' => ['nullable', 'string'],
@@ -392,7 +410,7 @@ class DevelopmentController extends Controller
                     return null;
                 }
 
-                $normalized['product_name'] = $normalized['product_name'] ?? 'Producto '.($index + 1);
+                $normalized['product_name'] = $normalized['product_name'] ?? 'Modelo '.($index + 1);
 
                 return $normalized;
             })
@@ -418,7 +436,7 @@ class DevelopmentController extends Controller
         return $rules;
     }
 
-    private function amenitiesToArray(array $value): array
+    private function itemsToArray(array $value): array
     {
         return collect($value)
             ->map(fn (string $item) => trim($item))
@@ -426,6 +444,38 @@ class DevelopmentController extends Controller
             ->unique(fn (string $item) => str($item)->lower()->ascii()->value())
             ->values()
             ->all();
+    }
+
+    private function syncPaymentMethodsCatalog(array $paymentMethods): void
+    {
+        foreach ($paymentMethods as $paymentMethod) {
+            $slug = Str::slug($paymentMethod);
+
+            if ($slug === '') {
+                continue;
+            }
+
+            PaymentMethod::updateOrCreate(
+                ['slug' => $slug],
+                ['name' => $paymentMethod, 'is_active' => true]
+            );
+        }
+    }
+
+    private function syncAmenitiesCatalog(array $amenities): void
+    {
+        foreach ($amenities as $amenity) {
+            $slug = Str::slug($amenity);
+
+            if ($slug === '') {
+                continue;
+            }
+
+            Amenity::updateOrCreate(
+                ['slug' => $slug],
+                ['name' => $amenity, 'is_active' => true]
+            );
+        }
     }
 
     private function developerName(?int $developerProfileId): ?string
@@ -445,6 +495,11 @@ class DevelopmentController extends Controller
     private function amenitiesCatalog()
     {
         return Amenity::where('is_active', true)->orderBy('name')->pluck('name')->all();
+    }
+
+    private function paymentMethodsCatalog()
+    {
+        return PaymentMethod::where('is_active', true)->orderBy('name')->pluck('name')->all();
     }
 
     private function deletePublicFile(?string $path): void

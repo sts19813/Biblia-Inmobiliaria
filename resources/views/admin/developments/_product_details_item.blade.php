@@ -5,6 +5,7 @@
     $fieldPrefix = 'property_details[' . $indexValue . ']';
     $fieldIdPrefix = 'property_details_' . $type . '_' . $indexValue;
     $productName = $product['product_name'] ?? '';
+    $productPrice = $product['price'] ?? '';
     $productValue = fn (string $key) => $product[$key] ?? '';
     $productError = fn (string $key) => $isRealIndex ? 'property_details.' . $indexValue . '.' . $key : null;
 @endphp
@@ -13,9 +14,9 @@
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-5">
         <div>
             <div class="fw-bold fs-5 text-gray-900" data-product-title>
-                {{ filled($productName) ? $productName : 'Producto ' . ((int) $indexValue + 1) }}
+                {{ filled($productName) ? $productName : 'Modelo ' . ((int) $indexValue + 1) }}
             </div>
-            <div class="text-muted fw-semibold fs-8">Ficha de producto</div>
+            <div class="text-muted fw-semibold fs-8">Ficha de modelo</div>
         </div>
         <button type="button" class="btn btn-sm btn-light-danger" data-product-remove>
             <i class="ki-outline ki-trash fs-3"></i>
@@ -29,7 +30,7 @@
         @endphp
         <div class="col-md-6 col-xl-4">
             <label class="required form-label" for="{{ $fieldIdPrefix }}_product_name" data-product-label-for="product_name">
-                Nombre del producto
+                Nombre del modelo
             </label>
             <input id="{{ $fieldIdPrefix }}_product_name" type="text" name="{{ $fieldPrefix }}[product_name]"
                 value="{{ $productName }}"
@@ -38,6 +39,26 @@
                 @disabled(! $isActiveSection) @required($isActiveSection)>
             @if ($productNameError)
                 @error($productNameError)
+                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                @enderror
+            @endif
+        </div>
+
+        @php
+            $productPriceError = $productError('price');
+        @endphp
+        <div class="col-md-6 col-xl-4">
+            <label class="form-label" for="{{ $fieldIdPrefix }}_price" data-product-label-for="price">
+                Precio
+            </label>
+            <input id="{{ $fieldIdPrefix }}_price" type="number" name="{{ $fieldPrefix }}[price]"
+                value="{{ $productPrice }}"
+                class="form-control form-control-solid @if ($productPriceError) @error($productPriceError) is-invalid @enderror @endif"
+                min="0" step="0.01"
+                data-product-input data-product-required="0" data-product-field="price"
+                @disabled(! $isActiveSection)>
+            @if ($productPriceError)
+                @error($productPriceError)
                     <div class="invalid-feedback d-block">{{ $message }}</div>
                 @enderror
             @endif

@@ -195,7 +195,7 @@ class DevelopmentComparisonController extends Controller
             $this->row($items, 'Desarrollo', fn (array $item) => $item['development']->name),
             $this->row($items, 'Tipo', fn (array $item) => $this->propertyTypeLabel($item['development'])),
             $this->row($items, 'Ubicacion', fn (array $item) => $this->lines($item['development']->zone, $item['development']->city)),
-            $this->row($items, 'Precio', fn (array $item) => $this->money($item['development']->price_from), 'price'),
+            $this->row($items, 'Precio', fn (array $item) => $this->money($this->modelPrice($item)), 'price'),
             $this->row($items, 'Precio por m2', fn (array $item) => $this->money($item['development']->price_per_m2).'/m2'),
             $this->row($items, 'Fecha de entrega', fn (array $item) => $item['development']->delivery_date?->format('d/m/Y') ?: '-'),
             $this->row($items, 'Estado', fn (array $item) => $this->statusLabel($item['development'])),
@@ -216,6 +216,7 @@ class DevelopmentComparisonController extends Controller
         $detailOrder = array_flip(array_keys(DevelopmentController::DETAIL_LABELS));
         $detailKeys = $items
             ->flatMap(fn (array $item) => array_keys($item['product'] ?? []))
+            ->reject(fn (string $key) => in_array($key, ['product_name', 'price'], true))
             ->unique()
             ->sortBy(fn (string $key) => $detailOrder[$key] ?? PHP_INT_MAX)
             ->values();
@@ -271,6 +272,11 @@ class DevelopmentComparisonController extends Controller
             ->contains($needle);
     }
 
+    private function modelPrice(array $item): mixed
+    {
+        return $item['product']['price'] ?? $item['development']->price_from;
+    }
+
     private function detailValue(mixed $value): string
     {
         if ($value === null || $value === '') {
@@ -289,6 +295,8 @@ class DevelopmentComparisonController extends Controller
             'segunda_fila' => 'Segunda fila',
             'tercera_fila' => 'Tercera fila',
             'agua_potable' => 'Agua potable',
+            'pipa' => 'Pipa de agua',
+            'pozo' => 'Pozo',
             'mixto' => 'Mixto',
             'comercial' => 'Comercial',
             'oficinas' => 'Oficinas',

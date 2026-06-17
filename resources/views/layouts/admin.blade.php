@@ -26,6 +26,7 @@
             --admin-sidebar-text: rgba(210, 220, 243, .82);
             --admin-sidebar-text-active: #ffffff;
             --admin-sidebar-width: 300px !important;
+            --admin-sidebar-hover-overlap: 26px;
             --bs-text-white: #fff !important;
         }
 
@@ -607,7 +608,7 @@
         [data-kt-app-sidebar-minimize="on"] .app-sidebar-menu-primary > .menu-item:focus-within > .sidebar-hover-card {
             display: flex;
             position: absolute;
-            left: calc(var(--admin-sidebar-mini-width) - 6px);
+            left: calc(var(--admin-sidebar-mini-width) - var(--admin-sidebar-hover-overlap));
             top: 50%;
             transform: translateY(-50%);
             z-index: 120;
@@ -627,8 +628,8 @@
             position: absolute;
             top: 0;
             bottom: 0;
-            left: -14px;
-            width: 14px;
+            left: calc(var(--admin-sidebar-hover-overlap) * -1);
+            width: var(--admin-sidebar-hover-overlap);
         }
 
         [data-kt-app-sidebar-minimize="on"] .sidebar-hover-title,
@@ -663,7 +664,7 @@
         [data-kt-app-sidebar-minimize="on"] .sidebar-user-hover-card:hover {
             display: flex;
             position: absolute;
-            left: calc(var(--admin-sidebar-mini-width) - 6px);
+            left: calc(var(--admin-sidebar-mini-width) - var(--admin-sidebar-hover-overlap));
             bottom: 0;
             z-index: 120;
             width: 310px;
@@ -684,8 +685,8 @@
             position: absolute;
             top: 0;
             bottom: 0;
-            left: -14px;
-            width: 14px;
+            left: calc(var(--admin-sidebar-hover-overlap) * -1);
+            width: var(--admin-sidebar-hover-overlap);
         }
 
         .sidebar-hover-button {

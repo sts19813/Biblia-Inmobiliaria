@@ -43,10 +43,9 @@
         'trash_chute' => $yesNoOptions,
         'covered_parking' => $yesNoOptions,
         'ocean_view' => ['frontal' => 'Frontal', 'lateral' => 'Lateral', 'sin_vista' => 'Sin vista'],
-        'vacation_rental_program' => $yesNoOptions,
         'primary_bedroom_ocean_view' => $yesNoOptions,
         'rooftop' => $yesNoOptions,
-        'water_supply' => ['agua_potable' => 'Agua potable', 'pipa' => 'Pipa de agua', 'mixto' => 'Mixto'],
+        'water_supply' => ['agua_potable' => 'Agua potable', 'pipa' => 'Pipa de agua', 'pozo' => 'Pozo', 'mixto' => 'Mixto'],
         'sea_access' => [
             'primera_fila' => 'Primera fila',
             'segunda_fila' => 'Segunda fila',
@@ -74,6 +73,10 @@
             ->value();
     };
     $formatDetailValue = function (string $key, $value) use ($detailOptions, $formatValue, $normalizeSelectValue) {
+        if ($key === 'price' && is_numeric($value)) {
+            return '$' . number_format((float) $value, 2);
+        }
+
         $normalizedValue = $normalizeSelectValue($value);
 
         foreach ($detailOptions[$key] ?? [] as $optionValue => $optionLabel) {
@@ -219,7 +222,7 @@
             <div class="card card-flush">
                 <div class="card-header">
                     <div class="card-title">
-                        <h3 class="fw-bold mb-0">Datos del producto</h3>
+                        <h3 class="fw-bold mb-0">Modelos</h3>
                     </div>
                 </div>
                 <div class="card-body">
@@ -235,9 +238,9 @@
                                         </div>
                                         <div>
                                             <div class="fw-bold fs-4 text-gray-900">
-                                                {{ $product['product_name'] ?? 'Producto ' . ($productIndex + 1) }}
+                                                {{ $product['product_name'] ?? 'Modelo ' . ($productIndex + 1) }}
                                             </div>
-                                            <div class="text-muted fw-semibold fs-8">Producto {{ $productIndex + 1 }}</div>
+                                            <div class="text-muted fw-semibold fs-8">Modelo {{ $productIndex + 1 }}</div>
                                         </div>
                                     </div>
 

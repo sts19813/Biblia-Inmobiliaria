@@ -85,7 +85,7 @@ class DeveloperProfileController extends Controller
     {
         return $request->validate([
             'commercial_name' => ['required', 'string', 'max:180'],
-            'legal_name' => ['required', 'string', 'max:220'],
+            'legal_name' => ['nullable', 'string', 'max:220'],
             'logo' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,svg', 'max:5120'],
             'cover_image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,svg', 'max:8192'],
             'website' => ['nullable', 'url', 'max:220'],
@@ -104,7 +104,6 @@ class DeveloperProfileController extends Controller
             'twitter_url' => ['nullable', 'url', 'max:220'],
         ], [
             'commercial_name.required' => 'El nombre comercial es obligatorio.',
-            'legal_name.required' => 'La razon social es obligatoria.',
             '*.url' => 'Captura una URL valida.',
             'corporate_email.email' => 'Captura un email corporativo valido.',
             'logo.mimes' => 'El logo debe ser JPG, PNG, WEBP o SVG.',

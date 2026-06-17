@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Amenity;
 use App\Models\Development;
+use App\Models\PaymentMethod;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -51,10 +52,10 @@ class AdvisorDevelopmentCatalogController extends Controller
                 ->groupBy('city')
                 ->map(fn (Collection $items) => $items->pluck('zone')->filter()->unique()->sort()->values())
                 ->filter(fn (Collection $zones, ?string $city) => filled($city)),
-            'paymentMethods' => ['Contado', 'Credito bancario', 'Infonavit', 'Cofinavit'],
+            'paymentMethods' => $this->paymentMethods($allDevelopments),
             'amenities' => $this->amenities($allDevelopments),
-            'priceMin' => (float) $allDevelopments->min('price_from'),
-            'priceMax' => (float) $allDevelopments->max('price_from'),
+            'priceMin' => (float) $allCatalogItems->map(fn (array $item) => $this->modelPrice($item))->filter()->min(),
+            'priceMax' => (float) $allCatalogItems->map(fn (array $item) => $this->modelPrice($item))->filter()->max(),
             'filters' => $request->all(),
             'selectedComparisonKeys' => $this->selectedComparisonKeys($request),
             'comparisonMin' => $comparisonMin,
@@ -87,7 +88,7 @@ class AdvisorDevelopmentCatalogController extends Controller
             ->filter(fn (array $item) => $this->matchesIn($item['development']->city, $request->input('cities', [])))
             ->filter(fn (array $item) => $this->matchesIn($item['development']->zone, $request->input('zones', [])))
             ->filter(fn (array $item) => $this->matchesIn($item['development']->status, $request->input('statuses', [])))
-            ->filter(fn (array $item) => $this->matchesRange((float) $item['development']->price_from, $request->input('price_min'), $request->input('price_max')))
+            ->filter(fn (array $item) => $this->matchesRange($this->modelPrice($item), $request->input('price_min'), $request->input('price_max')))
             ->filter(fn (array $item) => $this->matchesBedrooms($item['product'], $request->input('bedrooms')))
             ->filter(fn (array $item) => $this->matchesBathrooms($item['product'], $request->input('bathrooms')))
             ->filter(fn (array $item) => $this->matchesPaymentMethods($item['development'], $request->input('payment_methods', [])))
@@ -210,6 +211,13 @@ class AdvisorDevelopmentCatalogController extends Controller
         return is_numeric($value) ? (float) $value : null;
     }
 
+    private function modelPrice(array $item): ?float
+    {
+        $value = $item['product']['price'] ?? $item['development']->price_from;
+
+        return is_numeric($value) ? (float) $value : null;
+    }
+
     private function selectedComparisonKeys(Request $request): array
     {
         return collect($request->session()->get(DevelopmentComparisonController::sessionKey(), []))
@@ -236,6 +244,17 @@ class AdvisorDevelopmentCatalogController extends Controller
             ->merge($developments->flatMap(fn (Development $development) => $development->amenities ?? []))
             ->filter()
             ->unique(fn (string $amenity) => str($amenity)->lower()->ascii()->value())
+            ->sort()
+            ->values();
+    }
+
+    private function paymentMethods(Collection $developments): Collection
+    {
+        return collect(PaymentMethod::where('is_active', true)->orderBy('name')->pluck('name'))
+            ->merge($developments->flatMap(fn (Development $development) => preg_split('/[\r\n,]+/', (string) $development->payment_methods)))
+            ->map(fn (?string $method) => trim((string) $method))
+            ->filter()
+            ->unique(fn (string $method) => str($method)->lower()->ascii()->value())
             ->sort()
             ->values();
     }
