@@ -135,7 +135,7 @@ class Development extends Model
 
                 $normalized['product_name'] = $normalized['product_name']
                     ?? $fallbackName
-                    ?? 'Producto '.($index + 1);
+                    ?? 'Modelo '.($index + 1);
 
                 return $normalized;
             })
@@ -153,7 +153,14 @@ class Development extends Model
     {
         $product = $this->productDetailsAt($index);
 
-        return (string) ($product['product_name'] ?? 'Producto '.($index + 1));
+        return (string) ($product['product_name'] ?? 'Modelo '.($index + 1));
+    }
+
+    public function productPriceAt(int $index): mixed
+    {
+        $product = $this->productDetailsAt($index);
+
+        return $product['price'] ?? $this->price_from;
     }
 
     public function comparisonSelectionKey(int $productIndex): string

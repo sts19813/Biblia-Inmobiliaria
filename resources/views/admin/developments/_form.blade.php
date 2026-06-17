@@ -9,6 +9,10 @@
     $selectedAmenities = is_array($selectedAmenities)
         ? $selectedAmenities
         : collect(preg_split('/[\r\n,]+/', (string) $selectedAmenities))->map(fn ($item) => trim($item))->filter()->values()->all();
+    $selectedPaymentMethods = old('payment_methods', $development->payment_methods ?? []);
+    $selectedPaymentMethods = is_array($selectedPaymentMethods)
+        ? $selectedPaymentMethods
+        : collect(preg_split('/[\r\n,]+/', (string) $selectedPaymentMethods))->map(fn ($item) => trim($item))->filter()->values()->all();
     $normalizeSelectValue = function ($value) {
         if (is_bool($value)) {
             return $value ? 'si' : 'no';
@@ -108,12 +112,10 @@
                 ['name' => 'half_bathrooms', 'label' => 'Medios banos', 'type' => 'number', 'step' => '1'],
                 ['name' => 'parking_spaces', 'label' => 'Estacionamientos', 'type' => 'number', 'step' => '1'],
                 ['name' => 'ocean_view', 'label' => 'Vista al mar', 'type' => 'select', 'options' => ['frontal' => 'Frontal', 'lateral' => 'Lateral', 'sin_vista' => 'Sin vista']],
-                ['name' => 'vacation_rental_program', 'label' => 'Programa renta vacacional', 'type' => 'select', 'options' => $yesNoOptions],
-                ['name' => 'estimated_yield', 'label' => 'Rendimiento estimado (%)', 'type' => 'number', 'step' => '0.01'],
                 ['name' => 'primary_bedroom_ocean_view', 'label' => 'Recamara principal con vista al mar', 'type' => 'select', 'options' => $yesNoOptions],
                 ['name' => 'elevator', 'label' => 'Elevador', 'type' => 'select', 'options' => $yesNoOptions],
                 ['name' => 'rooftop', 'label' => 'Rooftop', 'type' => 'select', 'options' => $yesNoOptions],
-                ['name' => 'water_supply', 'label' => 'Agua potable o pipa', 'type' => 'select', 'options' => ['agua_potable' => 'Agua potable', 'pipa' => 'Pipa de agua', 'mixto' => 'Mixto']],
+                ['name' => 'water_supply', 'label' => 'Agua potable o pipa', 'type' => 'select', 'options' => ['agua_potable' => 'Agua potable', 'pipa' => 'Pipa de agua', 'pozo' => 'Pozo', 'mixto' => 'Mixto']],
                 ['name' => 'sea_access', 'label' => 'Acceso al mar', 'type' => 'select', 'options' => ['primera_fila' => 'Primera fila', 'segunda_fila' => 'Segunda fila', 'tercera_fila' => 'Tercera fila', 'posterior' => 'Posterior']],
                 ['name' => 'service_room', 'label' => 'Cuarto de servicio', 'type' => 'select', 'options' => $yesNoOptions],
                 ['name' => 'equipment', 'label' => 'Equipamiento', 'type' => 'textarea', 'cols' => 'col-12'],
@@ -416,11 +418,11 @@
                     </div>
 
                     <div class="col-md-4">
-                        <label class="required form-label">Mensualidades</label>
+                        <label class="form-label">Mensualidades</label>
                         <input type="number" name="monthly_payments"
                             value="{{ old('monthly_payments', $development->monthly_payments) }}"
                             class="form-control form-control-solid @error('monthly_payments') is-invalid @enderror"
-                            min="0" step="0.01" required>
+                            min="0" step="0.01">
                         @error('monthly_payments')
                             <div class="invalid-feedback d-block">{{ $message }}</div>
                         @enderror
@@ -475,10 +477,23 @@
 
                     <div class="col-md-6">
                         <label class="required form-label">Formas de pago</label>
-                        <textarea name="payment_methods" rows="4"
-                            class="form-control form-control-solid @error('payment_methods') is-invalid @enderror"
-                            placeholder="Contado, credito, Infonavit, Cofinavit..." required>{{ old('payment_methods', $development->payment_methods) }}</textarea>
+                        <select name="payment_methods[]"
+                            class="form-select form-select-solid @error('payment_methods') is-invalid @enderror"
+                            data-development-payment-methods
+                            data-control="select2"
+                            data-placeholder="Seleccionar o escribir formas de pago"
+                            multiple required>
+                            @foreach (collect($paymentMethodsCatalog)->merge($selectedPaymentMethods)->filter()->unique() as $paymentMethod)
+                                <option value="{{ $paymentMethod }}" @selected(in_array($paymentMethod, $selectedPaymentMethods, true))>
+                                    {{ $paymentMethod }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <div class="form-text">Puedes seleccionar del catalogo o escribir una nueva forma de pago como tag.</div>
                         @error('payment_methods')
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                        @enderror
+                        @error('payment_methods.*')
                             <div class="invalid-feedback d-block">{{ $message }}</div>
                         @enderror
                     </div>
@@ -498,12 +513,12 @@
         <div class="card card-flush">
             <div class="card-header">
                 <div class="card-title">
-                    <h3 class="fw-bold mb-0">Datos del producto</h3>
+                    <h3 class="fw-bold mb-0">Modelos</h3>
                 </div>
                 <div class="card-toolbar">
                     <button type="button" class="btn btn-sm btn-light-primary" data-product-add-active>
                         <i class="ki-outline ki-plus fs-3"></i>
-                        Agregar producto
+                        Agregar modelo
                     </button>
                 </div>
             </div>
@@ -544,13 +559,13 @@
                         </div>
 
                         <div class="text-muted fw-semibold text-center py-8 d-none" data-product-empty>
-                            Sin productos capturados para este tipo.
+                            Sin modelos capturados para este tipo.
                         </div>
 
                         <div class="mt-5">
                             <button type="button" class="btn btn-sm btn-light-primary" data-product-add>
                                 <i class="ki-outline ki-plus fs-3"></i>
-                                Agregar producto
+                                Agregar modelo
                             </button>
                         </div>
 
@@ -680,6 +695,7 @@
             var typeInputs = form.querySelectorAll('input[name="property_type"]');
             var uploadZones = form.querySelectorAll('[data-upload-zone]');
             var amenitiesSelect = form.querySelector('[data-development-amenities]');
+            var paymentMethodsSelect = form.querySelector('[data-development-payment-methods]');
             var addActiveProductButton = form.querySelector('[data-product-add-active]');
 
             if (window.jQuery && jQuery.fn.select2 && amenitiesSelect) {
@@ -691,6 +707,20 @@
                     language: {
                         noResults: function () {
                             return 'Escribe para agregar una nueva amenidad';
+                        }
+                    }
+                });
+            }
+
+            if (window.jQuery && jQuery.fn.select2 && paymentMethodsSelect) {
+                jQuery(paymentMethodsSelect).select2({
+                    tags: true,
+                    width: '100%',
+                    tokenSeparators: [','],
+                    placeholder: paymentMethodsSelect.dataset.placeholder || 'Seleccionar formas de pago',
+                    language: {
+                        noResults: function () {
+                            return 'Escribe para agregar una nueva forma de pago';
                         }
                     }
                 });
@@ -727,7 +757,7 @@
                     var title = item.querySelector('[data-product-title]');
 
                     if (title) {
-                        title.textContent = (nameInput?.value || '').trim() || 'Producto ' + (index + 1);
+                        title.textContent = (nameInput?.value || '').trim() || 'Modelo ' + (index + 1);
                     }
                 });
 

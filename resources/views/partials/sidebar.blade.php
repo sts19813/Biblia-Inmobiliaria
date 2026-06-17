@@ -118,12 +118,23 @@
                                     <span class="menu-title">Amenidades</span>
                                 </a>
                             </div>
+                            <div class="menu-item">
+                                <a class="menu-link {{ request()->routeIs('admin.catalogs.payment-methods.*') ? 'active' : '' }}"
+                                    href="{{ route('admin.catalogs.payment-methods.index') }}">
+                                    <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
+                                    <span class="menu-title">Formas de pago</span>
+                                </a>
+                            </div>
                         </div>
                         <div class="sidebar-hover-card">
                             <div class="sidebar-hover-title">Catalogos</div>
                             <a href="{{ route('admin.catalogs.amenities.index') }}"
                                 class="sidebar-hover-link {{ request()->routeIs('admin.catalogs.amenities.*') ? 'active' : '' }}">
                                 Amenidades
+                            </a>
+                            <a href="{{ route('admin.catalogs.payment-methods.index') }}"
+                                class="sidebar-hover-link {{ request()->routeIs('admin.catalogs.payment-methods.*') ? 'active' : '' }}">
+                                Formas de pago
                             </a>
                         </div>
                     </div>

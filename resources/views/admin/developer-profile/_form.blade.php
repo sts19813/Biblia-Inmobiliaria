@@ -66,14 +66,12 @@
                         <label class="form-label fw-semibold required">Nombre comercial</label>
                         <input type="text" name="commercial_name" class="form-control form-control-solid"
                             value="{{ old('commercial_name', $profile->commercial_name) }}"
-                            placeholder="Desarrollos Premium S.A. de C.V."
                             data-preview-text="commercial_name" required>
                     </div>
                     <div class="mb-6">
-                        <label class="form-label fw-semibold required">Razon social</label>
+                        <label class="form-label fw-semibold">Razon social</label>
                         <input type="text" name="legal_name" class="form-control form-control-solid"
-                            value="{{ old('legal_name', $profile->legal_name) }}"
-                            placeholder="Desarrollos Premium Sociedad Anonima de Capital Variable" required>
+                            value="{{ old('legal_name', $profile->legal_name) }}">
                     </div>
 
                     <div class="row g-6">
@@ -159,19 +157,19 @@
                         <div class="col-md-4">
                             <label class="form-label fw-semibold">Ciudad</label>
                             <input type="text" name="city" class="form-control form-control-solid"
-                                value="{{ old('city', $profile->city) }}" placeholder="Monterrey"
+                                value="{{ old('city', $profile->city ?: ($isEdit ? null : 'Mérida')) }}"
                                 data-preview-text="city">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-semibold">Estado</label>
                             <input type="text" name="state" class="form-control form-control-solid"
-                                value="{{ old('state', $profile->state) }}" placeholder="Nuevo Leon"
+                                value="{{ old('state', $profile->state ?: ($isEdit ? null : 'Yucatan')) }}"
                                 data-preview-text="state">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-semibold">Pais</label>
                             <input type="text" name="country" class="form-control form-control-solid"
-                                value="{{ old('country', $profile->country) }}" placeholder="Mexico">
+                                value="{{ old('country', $profile->country ?: ($isEdit ? null : 'Mexico')) }}">
                         </div>
                     </div>
                 </div>
@@ -270,7 +268,7 @@
                                 <div>
                                     <i class="ki-outline ki-geolocation text-danger me-2"></i>
                                     <span data-preview-location>
-                                        {{ trim(($profile->city ?: 'Monterrey') . ', ' . ($profile->state ?: 'N.L.'), ' ,') }}
+                                        {{ trim(($profile->city ?: 'Mérida') . ', ' . ($profile->state ?: 'Yucatán'), ' ,') }}
                                     </span>
                                 </div>
                                 <div>
@@ -338,8 +336,8 @@
                     output.textContent = value || output.dataset.defaultText || output.textContent;
                 }
 
-                var city = form.querySelector('[name="city"]')?.value || 'Monterrey';
-                var state = form.querySelector('[name="state"]')?.value || 'N.L.';
+                var city = form.querySelector('[name="city"]')?.value || 'Mérida';
+                var state = form.querySelector('[name="state"]')?.value || 'Yucatán';
                 var location = document.querySelector('[data-preview-location]');
 
                 if (location) {

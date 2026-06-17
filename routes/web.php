@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\DevelopmentComparisonController;
 use App\Http\Controllers\Admin\DevelopmentController;
 use App\Http\Controllers\Admin\DevelopmentDocumentController;
 use App\Http\Controllers\Admin\PermissionController;
+use App\Http\Controllers\Admin\PaymentMethodController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\UserController;
@@ -92,6 +93,10 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         Route::post('amenidades', [AmenityController::class, 'store'])->name('amenities.store');
         Route::patch('amenidades/{amenity}', [AmenityController::class, 'update'])->name('amenities.update');
         Route::delete('amenidades/{amenity}', [AmenityController::class, 'destroy'])->name('amenities.destroy');
+        Route::get('formas-de-pago', [PaymentMethodController::class, 'index'])->name('payment-methods.index');
+        Route::post('formas-de-pago', [PaymentMethodController::class, 'store'])->name('payment-methods.store');
+        Route::patch('formas-de-pago/{paymentMethod}', [PaymentMethodController::class, 'update'])->name('payment-methods.update');
+        Route::delete('formas-de-pago/{paymentMethod}', [PaymentMethodController::class, 'destroy'])->name('payment-methods.destroy');
     });
     Route::get('perfil-desarrolladora', [DeveloperProfileController::class, 'index'])->name('developer-profile');
     Route::get('perfil-desarrolladora/crear', [DeveloperProfileController::class, 'create'])->name('developer-profile.create');
